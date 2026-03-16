@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block title %}Profile{% endblock %}
+
+{% block content %}
+<section class="split-grid">
+    <article class="card">
+        <p class="eyebrow">Profile</p>
+        <h1>Update your learner details</h1>
+        <form method="post" class="stack-form">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit" class="button">Save Changes</button>
+        </form>
+    </article>
+
+    <article class="card">
+        <h2>Authentication Providers</h2>
+        <div class="stack-list">
+            <div class="stack-item">
+                <strong>Primary Sign-in Method</strong>
+                <span>{{ request.user.get_auth_provider_display }}</span>
+            </div>
+            {% for key, provider in social_providers.items %}
+                <div class="stack-item">
+                    <strong>{{ provider.label }}</strong>
+                    <span>{% if provider.enabled %}Ready to configure{% else %}Environment keys missing{% endif %}</span>
+                </div>
+            {% endfor %}
+        </div>
+    </article>
+</section>
+{% endblock %}

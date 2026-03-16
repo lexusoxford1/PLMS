@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+
+{% block title %}{{ lesson.title }}{% endblock %}
+
+{% block content %}
+<section class="section-heading">
+    <div>
+        <p class="eyebrow">{{ course.title }}</p>
+        <h1>{{ lesson.order }}. {{ lesson.title }}</h1>
+        <p>{{ lesson.summary }}</p>
+    </div>
+    <span class="progress-pill">
+        {% if progress.completed_at %}Completed{% else %}In Progress{% endif %}
+    </span>
+</section>
+
+<section class="split-grid lesson-layout">
+    <article class="card">
+        <h2>Lecture</h2>
+        <div class="content-block">{{ lesson.lecture_content|linebreaks }}</div>
+        <form method="post" action="{% url 'mark_lecture_complete' course.slug lesson.slug %}">
+            {% csrf_token %}
+            <button type="submit" class="button" {% if progress.lecture_completed %}disabled{% endif %}>
+                {% if progress.lecture_completed %}Lecture Completed{% else %}Mark Lecture Complete{% endif %}
+            </button>
+        </form>
+    </article>
+
+    <article class="card">
+        <h2>Progress Checklist</h2>
+        <div class="checklist">
+            <div class="check-item">
+                <span class="{% if progress.lecture_completed %}status done{% else %}status open{% endif %}"></span>
+                <span>Lecture completed</span>
+            </div>
+            <div class="check-item">
+                <span class="{% if progress.activity_completed %}status done{% else %}status {% if lesson.has_activity %}open{% else %}done{% endif %}{% endif %}"></span>
+                <span>Activity {% if lesson.has_activity %}submitted{% else %}not required{% endif %}</span>
+            </div>
+            <div class="check-item">
+                <span class="{% if progress.quiz_passed %}status done{% else %}status {% if lesson.has_quiz %}open{% else %}done{% endif %}{% endif %}"></span>
+                <span>Quiz {% if lesson.has_quiz %}passed{% else %}not required{% endif %}</span>
+            </div>
+        </div>
+        {% if next_lesson and progress.completed_at %}
+            <a class="button compact" href="{% url 'lesson_detail' course.slug next_lesson.slug %}">Open Next Lesson</a>
+        {% endif %}
+    </article>
+</section>
+
+{% if lesson.has_activity %}
+    <section class="card">
+        <h2>{{ lesson.activity_title|default:"Activity" }}</h2>
+        <div class="content-block">{{ lesson.activity_instructions|linebreaks }}</div>
+        {% if lesson.activity_hint %}
+            <p class="muted">Hint: {{ lesson.activity_hint }}</p>
+        {% endif %}
+        <form method="post" action="{% url 'submit_activity' course.slug lesson.slug %}" class="stack-form">
+            {% csrf_token %}
+            {{ activity_form.as_p }}
+            <button type="submit" class="button">
+                {% if progress.activity_completed %}Update Activity Submission{% else %}Submit Activity{% endif %}
+            </button>
+        </form>
+    </section>
+{% endif %}
+
+{% if lesson.has_quiz %}
+    <section class="card">
+        <div class="row-between">
+            <div>
+                <h2>Lesson Quiz</h2>
+                <p class="muted">Pass the quiz to finish this lesson and unlock the next one.</p>
+            </div>
+            <a class="button compact" href="{% url 'quiz_detail' lesson.quiz.id %}">Take Quiz</a>
+        </div>
+    </section>
+{% endif %}
+{% endblock %}

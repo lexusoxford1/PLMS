@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% load socialaccount %}
+
+{% block title %}Register{% endblock %}
+
+{% block content %}
+<section class="split-grid">
+    <article class="card">
+        <p class="eyebrow">Create Your Account</p>
+        <h1>Join the Programming LMS</h1>
+        <form method="post" class="stack-form">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit" class="button">Create Account</button>
+        </form>
+    </article>
+
+    <article class="card">
+        <h2>Social Login Readiness</h2>
+        <p class="muted">Google OAuth is now wired into the project. Activate it by adding your environment credentials.</p>
+        {% if social_providers.google.enabled %}
+            <form method="post" action="{% provider_login_url 'google' process='login' %}" class="stack-form">
+                {% csrf_token %}
+                <button type="submit" class="button google-button">Register with Google</button>
+            </form>
+        {% endif %}
+        <div class="stack-list">
+            {% for key, provider in social_providers.items %}
+                <div class="stack-item">
+                    <strong>{{ provider.label }}</strong>
+                    <span>{% if provider.enabled %}Configured{% else %}Not configured yet{% endif %}</span>
+                </div>
+            {% endfor %}
+        </div>
+    </article>
+</section>
+{% endblock %}

@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% load socialaccount %}
+
+{% block title %}Social Login{% endblock %}
+
+{% block content %}
+<section class="form-shell">
+    <div class="card narrow">
+        <p class="eyebrow">Social Login</p>
+        <h1>Continue with {{ provider.name }}</h1>
+        <p class="muted">You are about to sign in to PLMS using your {{ provider.name }} account.</p>
+        <form method="post" action="">
+            {% csrf_token %}
+            <button type="submit" class="button google-button">Continue</button>
+        </form>
+    </div>
+</section>
+{% endblock %}

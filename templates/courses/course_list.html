@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block title %}Courses{% endblock %}
+
+{% block content %}
+<section class="section-heading">
+    <div>
+        <p class="eyebrow">Course Catalog</p>
+        <h1>Programming paths with guided progression</h1>
+    </div>
+</section>
+
+<section class="card-grid">
+    {% for row in course_cards %}
+        <article class="card">
+            <div class="row-between">
+                <h2>{{ row.course.title }}</h2>
+                <span class="badge-tag">{{ row.course.get_difficulty_display }}</span>
+            </div>
+            <p>{{ row.course.description|truncatewords:24 }}</p>
+            <p class="muted">{{ row.course.estimated_hours }} hour{{ row.course.estimated_hours|pluralize }} estimated</p>
+            {% if request.user.is_authenticated %}
+                <p class="muted">Progress: {{ row.progress_percent }}%</p>
+            {% endif %}
+            <div class="card-actions">
+                <a class="button compact" href="{% url 'course_detail' row.course.slug %}">View Course</a>
+                {% if row.is_enrolled %}
+                    <span class="muted">Enrolled</span>
+                {% endif %}
+            </div>
+        </article>
+    {% empty %}
+        <article class="card">
+            <h2>No courses available</h2>
+            <p>Published courses will appear here once the admin adds them.</p>
+        </article>
+    {% endfor %}
+</section>
+{% endblock %}

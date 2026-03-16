@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block title %}Programming LMS{% endblock %}
+
+{% block content %}
+<section class="hero">
+    <div>
+        <p class="eyebrow">Structured Programming Learning</p>
+        <h1>Learn step by step with locked progression, quizzes, badges, and certificates.</h1>
+        <p class="hero-copy">
+            PLMS helps learners stay focused by unlocking each lesson only after the current lecture,
+            activity, and quiz are completed successfully.
+        </p>
+        <div class="hero-actions">
+            <a class="button" href="{% url 'course_list' %}">Browse Courses</a>
+            {% if not request.user.is_authenticated %}
+                <a class="button secondary" href="{% url 'register' %}">Create Account</a>
+            {% endif %}
+        </div>
+    </div>
+    <div class="hero-panel">
+        <h2>Core Learning Flow</h2>
+        <ol class="flow-list">
+            <li>Study the lecture content.</li>
+            <li>Finish the required programming activity.</li>
+            <li>Pass the quiz to unlock the next lesson.</li>
+            <li>Earn a badge and certificate at course completion.</li>
+        </ol>
+    </div>
+</section>
+
+<section class="section-heading">
+    <div>
+        <p class="eyebrow">Featured Courses</p>
+        <h2>Start with a guided path</h2>
+    </div>
+</section>
+
+<section class="card-grid">
+    {% for course in featured_courses %}
+        <article class="card">
+            <span class="badge-tag">{{ course.get_difficulty_display }}</span>
+            <h3>{{ course.title }}</h3>
+            <p>{{ course.description|truncatewords:24 }}</p>
+            <p class="muted">{{ course.estimated_hours }} hour{{ course.estimated_hours|pluralize }} estimated</p>
+            <a class="button compact" href="{% url 'course_detail' course.slug %}">View Course</a>
+        </article>
+    {% empty %}
+        <article class="card">
+            <h3>No published courses yet</h3>
+            <p>Add a course from the admin panel to populate the learning catalog.</p>
+        </article>
+    {% endfor %}
+</section>
+{% endblock %}

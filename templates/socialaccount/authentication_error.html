@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block title %}Google Login Error{% endblock %}
+
+{% block content %}
+<section class="form-shell">
+    <div class="card narrow">
+        <p class="eyebrow">Authentication Error</p>
+        <h1>Google sign-in could not be completed</h1>
+        <p class="muted">
+            Double-check the Google OAuth consent screen, test users, and redirect URI settings,
+            then try again.
+        </p>
+        <a class="button compact" href="{% url 'login' %}">Return to Login</a>
+    </div>
+</section>
+{% endblock %}

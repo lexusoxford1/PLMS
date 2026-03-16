@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% load socialaccount %}
+
+{% block title %}Login{% endblock %}
+
+{% block content %}
+<section class="split-grid">
+    <article class="card">
+        <p class="eyebrow">Account Access</p>
+        <h1>Sign in to continue learning</h1>
+        <form method="post" class="stack-form">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit" class="button">Login</button>
+        </form>
+        <p class="muted">No account yet? <a href="{% url 'register' %}">Create one here</a>.</p>
+    </article>
+
+    <article class="card">
+        <h2>Continue with Google</h2>
+        <p class="muted">Use your Google account to create or access your PLMS learner profile.</p>
+        {% if social_providers.google.enabled %}
+            <form method="post" action="{% provider_login_url 'google' process='login' %}" class="stack-form">
+                {% csrf_token %}
+                <button type="submit" class="button google-button">Sign in with Google</button>
+            </form>
+        {% else %}
+            <p class="muted">
+                Google sign-in is not active yet. Add both GOOGLE_CLIENT_ID and
+                GOOGLE_CLIENT_SECRET to your environment first.
+            </p>
+        {% endif %}
+    </article>
+</section>
+{% endblock %}

@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block title %}Certificate{% endblock %}
+
+{% block content %}
+<section class="section-heading">
+    <div>
+        <p class="eyebrow">Certificate Viewer</p>
+        <h1>{{ certificate.course.title }}</h1>
+        <p>Certificate No. {{ certificate.certificate_number }}</p>
+    </div>
+    <a class="button compact" href="{% url 'certificate_download' certificate.id %}">Download PDF</a>
+</section>
+
+<section class="card">
+    <div class="stack-list">
+        <div class="stack-item">
+            <strong>Learner</strong>
+            <span>{{ certificate.user.get_full_name|default:certificate.user.username }}</span>
+        </div>
+        <div class="stack-item">
+            <strong>Issued</strong>
+            <span>{{ certificate.issued_at|date:"F d, Y" }}</span>
+        </div>
+        {% if certificate.badge %}
+            <div class="stack-item">
+                <strong>Badge</strong>
+                <span>{{ certificate.badge.name }}</span>
+            </div>
+        {% endif %}
+    </div>
+
+    {% if certificate.file %}
+        <div class="certificate-preview">
+            <iframe src="{{ certificate.file.url }}" title="Certificate Preview"></iframe>
+        </div>
+    {% endif %}
+</section>
+{% endblock %}

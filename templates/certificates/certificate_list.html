@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block title %}Certificates{% endblock %}
+
+{% block content %}
+<section class="section-heading">
+    <div>
+        <p class="eyebrow">Certificates</p>
+        <h1>Your course completion records</h1>
+    </div>
+</section>
+
+<section class="card-grid">
+    {% for certificate in certificates %}
+        <article class="card">
+            <h2>{{ certificate.course.title }}</h2>
+            <p class="muted">Certificate No. {{ certificate.certificate_number }}</p>
+            <p class="muted">Issued {{ certificate.issued_at|date:"M d, Y" }}</p>
+            <div class="card-actions">
+                <a class="button compact" href="{% url 'certificate_detail' certificate.id %}">View</a>
+                <a class="button compact secondary" href="{% url 'certificate_download' certificate.id %}">Download</a>
+            </div>
+        </article>
+    {% empty %}
+        <article class="card">
+            <h2>No certificates yet</h2>
+            <p>Finish a course to generate your first completion certificate.</p>
+        </article>
+    {% endfor %}
+</section>
+{% endblock %}

@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block title %}Badges{% endblock %}
+
+{% block content %}
+<section class="section-heading">
+    <div>
+        <p class="eyebrow">Badges</p>
+        <h1>Your earned achievements</h1>
+    </div>
+</section>
+
+<section class="card-grid">
+    {% for award in badges %}
+        <article class="card">
+            <span class="badge-tag">Achievement</span>
+            <h2>{{ award.badge.name }}</h2>
+            <p>{{ award.badge.description }}</p>
+            <p class="muted">{{ award.course.title }}</p>
+            <p class="muted">Awarded {{ award.awarded_at|date:"M d, Y" }}</p>
+        </article>
+    {% empty %}
+        <article class="card">
+            <h2>No badges yet</h2>
+            <p>Complete a course to unlock your first badge.</p>
+        </article>
+    {% endfor %}
+</section>
+{% endblock %}

@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+
+{% block title %}{{ course.title }}{% endblock %}
+
+{% block content %}
+<section class="hero compact-hero">
+    <div>
+        <p class="eyebrow">{{ course.get_difficulty_display }}</p>
+        <h1>{{ course.title }}</h1>
+        <p class="hero-copy">{{ course.description }}</p>
+        <p class="muted">{{ course.estimated_hours }} hour{{ course.estimated_hours|pluralize }} estimated</p>
+        <div class="hero-actions">
+            {% if request.user.is_authenticated %}
+                {% if is_enrolled %}
+                    <span class="progress-pill">{{ progress_percent }}% completed</span>
+                {% else %}
+                    <form method="post" action="{% url 'enroll_course' course.slug %}">
+                        {% csrf_token %}
+                        <button type="submit" class="button">Enroll Now</button>
+                    </form>
+                {% endif %}
+            {% else %}
+                <a class="button" href="{% url 'login' %}">Login to Enroll</a>
+            {% endif %}
+        </div>
+    </div>
+    <div class="hero-panel">
+        <h2>Course Overview</h2>
+        <p>{{ course.overview|default:"This course is structured into sequential lessons with lecture, activity, and quiz checkpoints." }}</p>
+    </div>
+</section>
+
+<section class="card">
+    <h2>Lessons</h2>
+    <div class="checklist">
+        {% for row in outline %}
+            <div class="lesson-row">
+                <div>
+                    <strong>{{ row.lesson.order }}. {{ row.lesson.title }}</strong>
+                    <p class="muted">{{ row.lesson.summary|default:"Lecture, activity, and quiz checkpoint." }}</p>
+                </div>
+                <div class="card-actions">
+                    {% if request.user.is_authenticated and row.accessible %}
+                        <a class="button compact" href="{% url 'lesson_detail' course.slug row.lesson.slug %}">Open Lesson</a>
+                    {% else %}
+                        <span class="muted">{% if forloop.first and is_enrolled %}Ready once enrolled{% else %}Locked{% endif %}</span>
+                    {% endif %}
+                    {% if row.progress and row.progress.completed_at %}
+                        <span class="status-label done">Completed</span>
+                    {% endif %}
+                </div>
+            </div>
+        {% empty %}
+            <p class="muted">No lessons have been published for this course yet.</p>
+        {% endfor %}
+    </div>
+</section>
+{% endblock %}

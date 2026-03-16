@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block title %}Complete Social Signup{% endblock %}
+
+{% block content %}
+<section class="form-shell">
+    <div class="card narrow">
+        <p class="eyebrow">Finish Signup</p>
+        <h1>Complete your Google account setup</h1>
+        <p class="muted">PLMS needs a few final details before creating your learner profile.</p>
+        <form method="post" class="stack-form">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit" class="button">Complete Signup</button>
+        </form>
+    </div>
+</section>
+{% endblock %}

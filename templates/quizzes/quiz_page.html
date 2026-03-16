@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+
+{% block title %}{{ quiz.title }}{% endblock %}
+
+{% block content %}
+<section class="section-heading">
+    <div>
+        <p class="eyebrow">{{ course.title }}</p>
+        <h1>{{ quiz.title }}</h1>
+        <p>{{ quiz.instructions|default:"Answer all questions and meet the passing score to unlock the next lesson." }}</p>
+    </div>
+    <span class="progress-pill">Passing Score: {{ quiz.passing_score }}%</span>
+</section>
+
+<section class="split-grid">
+    <article class="card">
+        <form method="post" class="stack-form">
+            {% csrf_token %}
+            {% for field in form %}
+                <div class="question-block">
+                    {{ field.label_tag }}
+                    {{ field }}
+                    {% if field.help_text %}
+                        <small>{{ field.help_text }}</small>
+                    {% endif %}
+                    {% for error in field.errors %}
+                        <p class="error-text">{{ error }}</p>
+                    {% endfor %}
+                </div>
+            {% endfor %}
+            <button type="submit" class="button">Submit Quiz</button>
+        </form>
+    </article>
+
+    <article class="card">
+        <h2>Attempt History</h2>
+        <div class="stack-list">
+            {% for attempt in attempts %}
+                <div class="stack-item">
+                    <strong>{{ attempt.score }}%</strong>
+                    <span>{% if attempt.passed %}Passed{% else %}Try Again{% endif %} - {{ attempt.attempted_at|date:"M d, Y H:i" }}</span>
+                </div>
+            {% empty %}
+                <p class="muted">This will be your first attempt.</p>
+            {% endfor %}
+        </div>
+    </article>
+</section>
+{% endblock %}

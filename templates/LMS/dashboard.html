@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<section class="section-heading">
+    <div>
+        <p class="eyebrow">Learner Dashboard</p>
+        <h1>Welcome back, {{ request.user.first_name|default:request.user.username }}</h1>
+    </div>
+</section>
+
+<section class="stats-row">
+    <article class="stat-card">
+        <span class="stat-value">{{ dashboard_courses|length }}</span>
+        <span class="stat-label">Enrolled Courses</span>
+    </article>
+    <article class="stat-card">
+        <span class="stat-value">{{ badges|length }}</span>
+        <span class="stat-label">Badges Earned</span>
+    </article>
+    <article class="stat-card">
+        <span class="stat-value">{{ certificates|length }}</span>
+        <span class="stat-label">Certificates Ready</span>
+    </article>
+</section>
+
+<section class="card-grid wide">
+    {% for row in dashboard_courses %}
+        <article class="card">
+            <div class="row-between">
+                <h2>{{ row.course.title }}</h2>
+                <span class="progress-pill">{{ row.progress_percent }}%</span>
+            </div>
+            <p>{{ row.course.description|truncatewords:24 }}</p>
+            <div class="checklist">
+                {% for lesson_row in row.outline %}
+                    <div class="check-item">
+                        <span class="{% if lesson_row.progress and lesson_row.progress.completed_at %}status done{% elif lesson_row.accessible %}status open{% else %}status locked{% endif %}"></span>
+                        <span>{{ lesson_row.lesson.order }}. {{ lesson_row.lesson.title }}</span>
+                    </div>
+                {% endfor %}
+            </div>
+            <div class="card-actions">
+                <a class="button compact" href="{% url 'course_detail' row.course.slug %}">Open Course</a>
+                {% if row.completed_at %}
+                    <span class="muted">Completed {{ row.completed_at|date:"M d, Y" }}</span>
+                {% endif %}
+            </div>
+        </article>
+    {% empty %}
+        <article class="card">
+            <h2>No enrollments yet</h2>
+            <p>Enroll in a course to start tracking your lessons, quizzes, badges, and certificates.</p>
+            <a class="button compact" href="{% url 'course_list' %}">Explore Courses</a>
+        </article>
+    {% endfor %}
+</section>
+
+<section class="split-grid">
+    <article class="card">
+        <h2>Recent Quiz Attempts</h2>
+        <div class="stack-list">
+            {% for attempt in recent_attempts %}
+                <div class="stack-item">
+                    <strong>{{ attempt.quiz.title }}</strong>
+                    <span>{{ attempt.quiz.lesson.course.title }} - {{ attempt.score }}%</span>
+                </div>
+            {% empty %}
+                <p class="muted">No quiz attempts yet.</p>
+            {% endfor %}
+        </div>
+    </article>
+    <article class="card">
+        <h2>Latest Achievements</h2>
+        <div class="stack-list">
+            {% for award in badges %}
+                <div class="stack-item">
+                    <strong>{{ award.badge.name }}</strong>
+                    <span>{{ award.course.title }} - {{ award.awarded_at|date:"M d, Y" }}</span>
+                </div>
+            {% empty %}
+                <p class="muted">Complete a course to earn your first badge.</p>
+            {% endfor %}
+        </div>
+    </article>
+</section>
+{% endblock %}
