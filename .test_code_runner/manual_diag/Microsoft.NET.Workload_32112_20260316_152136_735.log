@@ -1,0 +1,14 @@
+[2026-03-16 15:21:36.759] [00007D70] === Logging started ===
+[2026-03-16 15:21:36.821] [00007D70] Executing: "C:\Program Files\dotnet\dotnet.exe" restore LessonRunner.csproj --nologo --verbosity quiet --configfile NuGet.Config --disable-build-servers -p:RestoreIgnoreFailedSources=true, PID: 32112, PPID: 10808
+[2026-03-16 15:21:36.834] [00007D70] IsElevated: False
+[2026-03-16 15:21:36.834] [00007D70] Is64BitProcess: True
+[2026-03-16 15:21:36.834] [00007D70] RebootPending: False
+[2026-03-16 15:21:36.834] [00007D70] ProcessorArchitecture: amd64
+[2026-03-16 15:21:36.834] [00007D70] HostArchitecture: x64
+[2026-03-16 15:21:36.834] [00007D70] SdkDirectory: 9.0.304
+[2026-03-16 15:21:36.834] [00007D70] VerifySignatures: True
+[2026-03-16 15:21:36.834] [00007D70] SDK feature band: 9.0.300
+[2026-03-16 15:21:40.247] [00007D70] Shutting down
+[2026-03-16 15:21:40.247] [00007D70] Shutdown completed.
+[2026-03-16 15:21:40.247] [00007D70] Restart required: False
+[2026-03-16 15:21:40.250] [00007D70] === Logging ended ===

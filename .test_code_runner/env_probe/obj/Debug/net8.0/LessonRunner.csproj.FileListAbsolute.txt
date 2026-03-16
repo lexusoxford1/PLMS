@@ -1,0 +1,15 @@
+C:\Users\KIT\OneDrive\Documents\Django\PLMS\.test_code_runner\env_probe\out\LessonRunner.exe
+C:\Users\KIT\OneDrive\Documents\Django\PLMS\.test_code_runner\env_probe\out\LessonRunner.deps.json
+C:\Users\KIT\OneDrive\Documents\Django\PLMS\.test_code_runner\env_probe\out\LessonRunner.runtimeconfig.json
+C:\Users\KIT\OneDrive\Documents\Django\PLMS\.test_code_runner\env_probe\out\LessonRunner.dll
+C:\Users\KIT\OneDrive\Documents\Django\PLMS\.test_code_runner\env_probe\out\LessonRunner.pdb
+C:\Users\KIT\OneDrive\Documents\Django\PLMS\.test_code_runner\env_probe\obj\Debug\net8.0\LessonRunner.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\KIT\OneDrive\Documents\Django\PLMS\.test_code_runner\env_probe\obj\Debug\net8.0\LessonRunner.AssemblyInfoInputs.cache
+C:\Users\KIT\OneDrive\Documents\Django\PLMS\.test_code_runner\env_probe\obj\Debug\net8.0\LessonRunner.AssemblyInfo.cs
+C:\Users\KIT\OneDrive\Documents\Django\PLMS\.test_code_runner\env_probe\obj\Debug\net8.0\LessonRunner.csproj.CoreCompileInputs.cache
+C:\Users\KIT\OneDrive\Documents\Django\PLMS\.test_code_runner\env_probe\obj\Debug\net8.0\LessonRunner.sourcelink.json
+C:\Users\KIT\OneDrive\Documents\Django\PLMS\.test_code_runner\env_probe\obj\Debug\net8.0\LessonRunner.dll
+C:\Users\KIT\OneDrive\Documents\Django\PLMS\.test_code_runner\env_probe\obj\Debug\net8.0\refint\LessonRunner.dll
+C:\Users\KIT\OneDrive\Documents\Django\PLMS\.test_code_runner\env_probe\obj\Debug\net8.0\LessonRunner.pdb
+C:\Users\KIT\OneDrive\Documents\Django\PLMS\.test_code_runner\env_probe\obj\Debug\net8.0\LessonRunner.genruntimeconfig.cache
+C:\Users\KIT\OneDrive\Documents\Django\PLMS\.test_code_runner\env_probe\obj\Debug\net8.0\ref\LessonRunner.dll

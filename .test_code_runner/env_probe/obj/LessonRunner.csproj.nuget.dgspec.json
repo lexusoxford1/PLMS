@@ -1,0 +1,67 @@
+{
+  "format": 1,
+  "restore": {
+    "C:\\Users\\KIT\\OneDrive\\Documents\\Django\\PLMS\\.test_code_runner\\env_probe\\LessonRunner.csproj": {}
+  },
+  "projects": {
+    "C:\\Users\\KIT\\OneDrive\\Documents\\Django\\PLMS\\.test_code_runner\\env_probe\\LessonRunner.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "C:\\Users\\KIT\\OneDrive\\Documents\\Django\\PLMS\\.test_code_runner\\env_probe\\LessonRunner.csproj",
+        "projectName": "LessonRunner",
+        "projectPath": "C:\\Users\\KIT\\OneDrive\\Documents\\Django\\PLMS\\.test_code_runner\\env_probe\\LessonRunner.csproj",
+        "packagesPath": "C:\\Users\\KIT\\OneDrive\\Documents\\Django\\PLMS\\.test_code_runner\\env_probe\\.runner_home\\.nuget\\packages",
+        "outputPath": "C:\\Users\\KIT\\OneDrive\\Documents\\Django\\PLMS\\.test_code_runner\\env_probe\\obj\\",
+        "projectStyle": "PackageReference",
+        "configFilePaths": [
+          "C:\\Users\\KIT\\OneDrive\\Documents\\Django\\PLMS\\.test_code_runner\\env_probe\\NuGet.Config"
+        ],
+        "originalTargetFrameworks": [
+          "net8.0"
+        ],
+        "sources": {
+          "C:\\Program Files\\dotnet\\library-packs": {}
+        },
+        "frameworks": {
+          "net8.0": {
+            "targetAlias": "net8.0",
+            "projectReferences": {}
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low",
+          "auditMode": "direct"
+        },
+        "SdkAnalysisLevel": "9.0.300"
+      },
+      "frameworks": {
+        "net8.0": {
+          "targetAlias": "net8.0",
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48",
+            "net481"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "frameworkReferences": {
+            "Microsoft.NETCore.App": {
+              "privateAssets": "all"
+            }
+          },
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.304/PortableRuntimeIdentifierGraph.json"
+        }
+      }
+    }
+  }
+}

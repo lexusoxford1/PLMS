@@ -1,0 +1,14 @@
+[2026-03-16 15:21:40.639] [00000F50] === Logging started ===
+[2026-03-16 15:21:40.664] [00000F50] Executing: "C:\Program Files\dotnet\dotnet.exe" build LessonRunner.csproj --nologo --verbosity quiet --output out --no-restore --disable-build-servers, PID: 3920, PPID: 10808
+[2026-03-16 15:21:40.668] [00000F50] IsElevated: False
+[2026-03-16 15:21:40.668] [00000F50] Is64BitProcess: True
+[2026-03-16 15:21:40.668] [00000F50] RebootPending: False
+[2026-03-16 15:21:40.668] [00000F50] ProcessorArchitecture: amd64
+[2026-03-16 15:21:40.668] [00000F50] HostArchitecture: x64
+[2026-03-16 15:21:40.668] [00000F50] SdkDirectory: 9.0.304
+[2026-03-16 15:21:40.668] [00000F50] VerifySignatures: False
+[2026-03-16 15:21:40.668] [00000F50] SDK feature band: 9.0.300
+[2026-03-16 15:21:46.243] [00000F50] Shutting down
+[2026-03-16 15:21:46.243] [00000F50] Shutdown completed.
+[2026-03-16 15:21:46.243] [00000F50] Restart required: False
+[2026-03-16 15:21:46.245] [00000F50] === Logging ended ===
