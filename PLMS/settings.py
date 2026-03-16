@@ -1,10 +1,14 @@
 """Settings for the Programming Learning Management System."""
 
 import os
+import sys
 from pathlib import Path
+
+from dotenv import load_dotenv
 
 
 BASE_DIR = Path(__file__).resolve().parent.parent
+load_dotenv(BASE_DIR / ".env")
 
 SECRET_KEY = os.environ.get(
     "DJANGO_SECRET_KEY",
@@ -28,6 +32,7 @@ INSTALLED_APPS = [
     "allauth.account",
     "allauth.socialaccount",
     "allauth.socialaccount.providers.google",
+    "allauth.socialaccount.providers.github",
     "LMS.apps.LmsConfig",
     "users.apps.UsersConfig",
     "courses.apps.CoursesConfig",
@@ -126,12 +131,8 @@ SOCIAL_LOGIN_PROVIDERS = {
         "enabled": bool(os.environ.get("GOOGLE_CLIENT_ID") and os.environ.get("GOOGLE_CLIENT_SECRET")),
         "label": "Google",
     },
-    "facebook": {
-        "enabled": bool(os.environ.get("FACEBOOK_CLIENT_ID")),
-        "label": "Facebook",
-    },
     "github": {
-        "enabled": bool(os.environ.get("GITHUB_CLIENT_ID")),
+        "enabled": bool(os.environ.get("GITHUB_CLIENT_ID") and os.environ.get("GITHUB_CLIENT_SECRET")),
         "label": "GitHub",
     },
 }
@@ -153,7 +154,46 @@ SOCIALACCOUNT_PROVIDERS = {
         "FETCH_USERINFO": True,
         "VERIFIED_EMAIL": True,
         "EMAIL_AUTHENTICATION": True,
+    },
+    "github": {
+        "APPS": [
+            {
+                "client_id": os.environ.get("GITHUB_CLIENT_ID", ""),
+                "secret": os.environ.get("GITHUB_CLIENT_SECRET", ""),
+                "key": "",
+            }
+        ],
+        "SCOPE": ["read:user", "user:email"],
     }
 }
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+CODE_RUNNER = {
+    "EXECUTION_ROOT": BASE_DIR / ".code_runner",
+    "DEFAULT_TIMEOUT_SECONDS": int(os.environ.get("CODE_RUNNER_TIMEOUT_SECONDS", "5")),
+    "COMPILE_TIMEOUT_SECONDS": int(os.environ.get("CODE_RUNNER_COMPILE_TIMEOUT_SECONDS", "15")),
+    "MAX_OUTPUT_CHARS": int(os.environ.get("CODE_RUNNER_MAX_OUTPUT_CHARS", "6000")),
+    "MAX_SOURCE_BYTES": int(os.environ.get("CODE_RUNNER_MAX_SOURCE_BYTES", "20000")),
+    "PYTHON_CMD": os.environ.get("CODE_RUNNER_PYTHON_CMD") or sys.executable,
+    "PHP_CMD": os.environ.get("CODE_RUNNER_PHP_CMD", "php"),
+    "DOTNET_CMD": os.environ.get("CODE_RUNNER_DOTNET_CMD", "dotnet"),
+    "CSHARP_TARGET_FRAMEWORK": os.environ.get("CODE_RUNNER_CSHARP_TARGET_FRAMEWORK", "net8.0"),
+}
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+        }
+    },
+    "loggers": {
+        "courses.activity_runner": {
+            "handlers": ["console"],
+            "level": os.environ.get("CODE_RUNNER_LOG_LEVEL", "INFO"),
+            "propagate": False,
+        }
+    },
+}

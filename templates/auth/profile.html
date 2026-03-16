@@ -24,7 +24,7 @@
             {% for key, provider in social_providers.items %}
                 <div class="stack-item">
                     <strong>{{ provider.label }}</strong>
-                    <span>{% if provider.enabled %}Ready to configure{% else %}Environment keys missing{% endif %}</span>
+                    <span>{% if provider.enabled %}Available for login{% else %}Environment keys missing{% endif %}</span>
                 </div>
             {% endfor %}
         </div>

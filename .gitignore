@@ -4,3 +4,4 @@ __pycache__/
 .env
 media/
 staticfiles/
+.test_code_runner/

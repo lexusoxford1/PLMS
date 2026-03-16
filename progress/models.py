@@ -4,11 +4,26 @@ from django.utils import timezone
 
 
 class LessonProgress(models.Model):
+    PENDING = "pending"
+    CORRECT = "correct"
+    INCORRECT = "incorrect"
+    ACTIVITY_STATUS_CHOICES = (
+        (PENDING, "Pending"),
+        (CORRECT, "Correct"),
+        (INCORRECT, "Incorrect"),
+    )
+
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="lesson_progress")
     lesson = models.ForeignKey("courses.Lesson", on_delete=models.CASCADE, related_name="progress_records")
     lecture_completed = models.BooleanField(default=False)
     activity_completed = models.BooleanField(default=False)
     activity_response = models.TextField(blank=True)
+    activity_attempts = models.PositiveIntegerField(default=0)
+    activity_status = models.CharField(max_length=20, choices=ACTIVITY_STATUS_CHOICES, default=PENDING)
+    activity_feedback_title = models.CharField(max_length=255, blank=True)
+    activity_feedback_body = models.TextField(blank=True)
+    activity_result_data = models.JSONField(default=dict, blank=True)
+    activity_last_submitted_at = models.DateTimeField(blank=True, null=True)
     quiz_passed = models.BooleanField(default=False)
     started_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

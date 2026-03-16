@@ -23,6 +23,10 @@ body {
     color: var(--ink);
 }
 
+[hidden] {
+    display: none !important;
+}
+
 a {
     color: var(--accent-strong);
     text-decoration: none;
@@ -68,7 +72,19 @@ a {
 }
 
 .page-shell {
-    padding: 2rem 0 4rem;
+    padding: clamp(1.25rem, 2vw, 2rem) 0 4rem;
+}
+
+.section-heading {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    align-items: flex-start;
+    margin-bottom: 1.5rem;
+}
+
+.section-heading > div {
+    min-width: 0;
 }
 
 .hero,
@@ -111,6 +127,7 @@ a {
 .card,
 .hero-panel,
 .stat-card {
+    min-width: 0;
     background: var(--surface);
     border: 1px solid var(--line);
     border-radius: 24px;
@@ -144,10 +161,14 @@ h2,
 h3,
 p {
     margin-top: 0;
+    overflow-wrap: anywhere;
 }
 
 .button,
 button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     border: none;
     border-radius: 999px;
     background: var(--accent);
@@ -161,8 +182,18 @@ button {
     background: var(--accent-strong);
 }
 
+.button.ghost {
+    border: 1px solid rgba(21, 94, 117, 0.18);
+    background: rgba(255, 255, 255, 0.1);
+    color: #f8fafc;
+}
+
 .button.google-button {
     background: #1f4f99;
+}
+
+.button.github-button {
+    background: #24292f;
 }
 
 .button.compact,
@@ -294,8 +325,786 @@ ul.errorlist,
     border-color: #fecaca;
 }
 
+.message.info {
+    border-color: #bfdbfe;
+}
+
+.toast-stack {
+    position: fixed;
+    top: 1rem;
+    right: 1rem;
+    z-index: 40;
+    display: grid;
+    gap: 0.85rem;
+    width: min(380px, calc(100% - 1.5rem));
+}
+
+.toast {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 0.75rem;
+    align-items: flex-start;
+    padding: 1rem 1rem 0.95rem;
+    border-radius: 18px;
+    border: 1px solid rgba(214, 200, 173, 0.85);
+    background: rgba(255, 253, 247, 0.98);
+    box-shadow: 0 20px 50px rgba(27, 20, 9, 0.22);
+    transform: translateY(-12px) scale(0.97);
+    opacity: 0;
+    transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.toast.visible {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+}
+
+.toast.success {
+    border-color: rgba(34, 197, 94, 0.35);
+}
+
+.toast.error {
+    border-color: rgba(239, 68, 68, 0.4);
+}
+
+.toast.info {
+    border-color: rgba(59, 130, 246, 0.35);
+}
+
+.toast-content p,
+.toast-content strong {
+    margin: 0;
+}
+
+.toast-content p {
+    margin-top: 0.25rem;
+    color: var(--muted);
+}
+
+.toast-title {
+    text-transform: capitalize;
+    letter-spacing: 0.02em;
+}
+
+.toast-close {
+    background: transparent;
+    color: var(--muted);
+    border-radius: 12px;
+    padding: 0.2rem 0.45rem;
+    line-height: 1;
+    font-size: 1.2rem;
+}
+
 .content-block {
     line-height: 1.7;
+    min-width: 0;
+}
+
+.rich-content h3 {
+    margin-bottom: 0.65rem;
+}
+
+.rich-content ul,
+.rich-content ol {
+    padding-left: 1.4rem;
+}
+
+.rich-content pre {
+    margin: 1rem 0;
+    padding: 1rem;
+    overflow-x: auto;
+    border-radius: 18px;
+    background: #1f2937;
+    color: #f9fafb;
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+}
+
+.rich-content code {
+    font-family: "Consolas", "Courier New", monospace;
+    font-size: 0.95rem;
+}
+
+.activity-feedback {
+    margin: 1rem 0;
+    padding: 1rem 1.1rem;
+    border-radius: 18px;
+    border: 1px solid var(--line);
+    background: #f8fafc;
+}
+
+.activity-feedback.success,
+.activity-feedback.correct {
+    border-color: #bbf7d0;
+    background: #f0fdf4;
+}
+
+.activity-feedback.error,
+.activity-feedback.incorrect {
+    border-color: #fecaca;
+    background: #fef2f2;
+}
+
+.activity-feedback p {
+    margin: 0.5rem 0;
+}
+
+.code-lab {
+    padding: 1.75rem;
+}
+
+.code-lab-header,
+.code-editor-toolbar,
+.code-runner-actions,
+.code-output-header,
+.code-lab-badges {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    align-items: center;
+}
+
+.code-lab-header {
+    margin-bottom: 1rem;
+}
+
+.code-lab-badges {
+    flex-wrap: wrap;
+}
+
+.code-lab-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.15fr) minmax(300px, 0.85fr);
+    gap: 1.25rem;
+    margin-top: 1.5rem;
+}
+
+.code-editor-panel,
+.code-results-panel {
+    display: grid;
+    gap: 1rem;
+    min-width: 0;
+}
+
+.code-editor-toolbar,
+.code-output-card,
+.code-helper-card {
+    min-width: 0;
+    max-width: 100%;
+    border: 1px solid rgba(214, 200, 173, 0.85);
+    border-radius: 20px;
+    background: linear-gradient(180deg, rgba(255, 250, 239, 0.92), rgba(255, 255, 255, 0.98));
+}
+
+.code-editor-toolbar {
+    padding: 0.9rem 1rem;
+}
+
+.code-file {
+    font-family: "Consolas", "Courier New", monospace;
+    font-size: 0.92rem;
+    color: var(--muted);
+}
+
+.runner-status {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 999px;
+    padding: 0.4rem 0.85rem;
+    font-size: 0.85rem;
+    font-weight: 700;
+}
+
+.runner-status.ready {
+    background: #e0f2fe;
+    color: #0f4c81;
+}
+
+.runner-status.running {
+    background: #fde68a;
+    color: #854d0e;
+}
+
+.runner-status.success {
+    background: #dcfce7;
+    color: var(--success);
+}
+
+.runner-status.warning {
+    background: #ffedd5;
+    color: #9a3412;
+}
+
+.runner-status.error {
+    background: #fee2e2;
+    color: var(--danger);
+}
+
+.code-editor-meta p {
+    margin-bottom: 0;
+}
+
+.code-editor-shell {
+    position: relative;
+    min-width: 0;
+    max-width: 100%;
+    border-radius: 24px;
+    overflow: hidden;
+    border: 1px solid rgba(20, 17, 12, 0.45);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+}
+
+.code-editor-shell::before {
+    content: "";
+    display: block;
+    height: 40px;
+    background:
+        radial-gradient(circle at 18px 20px, #ff6b6b 0 5px, transparent 6px),
+        radial-gradient(circle at 38px 20px, #ffd166 0 5px, transparent 6px),
+        radial-gradient(circle at 58px 20px, #06d6a0 0 5px, transparent 6px),
+        linear-gradient(180deg, #191721 0%, #101019 100%);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.code-submission-field,
+.code-editor-shell textarea {
+    width: 100%;
+    max-width: 100%;
+    min-height: 400px;
+    border: 0;
+    border-radius: 0;
+    padding: 1.1rem 1.2rem 1.4rem;
+    background: #14131d;
+    color: #f8f6ef;
+    font-family: "Consolas", "Courier New", monospace;
+    font-size: 0.98rem;
+    line-height: 1.65;
+    resize: vertical;
+    caret-color: #ffe082;
+}
+
+.code-submission-field:focus,
+.code-editor-shell textarea:focus {
+    outline: none;
+}
+
+.code-editor-shell textarea:disabled {
+    opacity: 0.82;
+}
+
+.code-runner-actions {
+    flex-wrap: wrap;
+}
+
+.code-output-card,
+.code-helper-card {
+    padding: 1rem 1.05rem;
+}
+
+.code-output-card.danger {
+    border-color: rgba(239, 68, 68, 0.24);
+}
+
+.code-output-header h3,
+.code-helper-card h3 {
+    margin-bottom: 0;
+}
+
+.code-console {
+    margin: 0.8rem 0 0;
+    min-height: 120px;
+    max-width: 100%;
+    max-height: 280px;
+    padding: 1rem;
+    border-radius: 18px;
+    overflow-x: auto;
+    overflow-y: auto;
+    background: #111827;
+    color: #e5eefb;
+    font-family: "Consolas", "Courier New", monospace;
+    line-height: 1.6;
+}
+
+.code-console-wrap {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+
+.code-console-danger {
+    background: #1f1012;
+    color: #ffe4e6;
+}
+
+.code-helper-card p {
+    margin: 0.6rem 0 0;
+    color: var(--muted);
+}
+
+.csharp-workspace {
+    display: grid;
+    grid-template-columns: minmax(0, 23.5rem) minmax(0, 1fr);
+    gap: 1.25rem;
+    align-items: start;
+    margin-bottom: 1.5rem;
+    min-width: 0;
+}
+
+.csharp-workspace-shell {
+    display: grid;
+    gap: 1rem;
+    margin-bottom: 1.75rem;
+    min-width: 0;
+}
+
+.csharp-workspace-banner {
+    display: grid;
+    grid-template-columns: minmax(0, 1.35fr) minmax(240px, 0.8fr);
+    gap: 1rem;
+    min-width: 0;
+    overflow: hidden;
+    padding: 1.35rem 1.4rem;
+    border-radius: 28px;
+    border: 1px solid rgba(112, 96, 255, 0.14);
+    background:
+        radial-gradient(circle at top right, rgba(255, 214, 10, 0.22), transparent 28%),
+        linear-gradient(145deg, rgba(28, 29, 53, 0.98), rgba(18, 19, 33, 0.98));
+    color: #f8fafc;
+    box-shadow: 0 20px 44px rgba(18, 19, 33, 0.2);
+}
+
+.csharp-workspace-banner p {
+    color: rgba(241, 245, 249, 0.84);
+}
+
+.csharp-quick-stats {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.8rem;
+    align-self: stretch;
+    min-width: 0;
+}
+
+.csharp-stat-card {
+    display: grid;
+    gap: 0.25rem;
+    min-width: 0;
+    padding: 0.95rem;
+    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.csharp-stat-card strong {
+    color: #fff8e1;
+}
+
+.csharp-stat-label {
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: rgba(241, 245, 249, 0.7);
+}
+
+.csharp-status-pill,
+.csharp-kind-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 2.5rem;
+    padding: 0.5rem 0.95rem;
+    border-radius: 999px;
+    border: 1px solid transparent;
+    font-size: 0.84rem;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    text-align: center;
+    white-space: nowrap;
+}
+
+.csharp-status-pill.neutral,
+.csharp-kind-pill.neutral {
+    background: rgba(248, 250, 252, 0.12);
+    border-color: rgba(248, 250, 252, 0.16);
+    color: #f8fafc;
+}
+
+.csharp-status-pill.success,
+.csharp-kind-pill.success {
+    background: rgba(20, 83, 45, 0.4);
+    border-color: rgba(74, 222, 128, 0.35);
+    color: #dcfce7;
+}
+
+.csharp-status-pill.warning,
+.csharp-kind-pill.warning {
+    background: rgba(133, 77, 14, 0.38);
+    border-color: rgba(251, 191, 36, 0.35);
+    color: #fef3c7;
+}
+
+.csharp-status-pill.error,
+.csharp-kind-pill.error {
+    background: rgba(127, 29, 29, 0.42);
+    border-color: rgba(248, 113, 113, 0.38);
+    color: #ffe4e6;
+}
+
+.csharp-mobile-nav {
+    display: none;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.csharp-mobile-nav a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 2.65rem;
+    padding: 0.65rem 1rem;
+    border-radius: 999px;
+    background: rgba(21, 101, 192, 0.08);
+    border: 1px solid rgba(21, 101, 192, 0.16);
+    color: #0f4c81;
+    font-weight: 700;
+}
+
+.csharp-sidebar,
+.csharp-ide {
+    display: grid;
+    gap: 1rem;
+    min-width: 0;
+}
+
+.csharp-sidebar {
+    position: sticky;
+    top: 6.25rem;
+    width: 100%;
+    max-width: 23.5rem;
+    justify-self: start;
+}
+
+.csharp-side-card {
+    width: 100%;
+    max-width: 100%;
+    padding: 1.2rem;
+    scroll-margin-top: 7rem;
+}
+
+.csharp-guide-list {
+    margin: 0;
+    padding-left: 1.25rem;
+    display: grid;
+    gap: 0.75rem;
+    line-height: 1.65;
+}
+
+.csharp-note-chip-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    margin-top: 1rem;
+}
+
+.csharp-note-chip {
+    display: inline-flex;
+    align-items: center;
+    min-height: 2.25rem;
+    padding: 0.45rem 0.8rem;
+    border-radius: 999px;
+    background: rgba(15, 118, 110, 0.08);
+    border: 1px solid rgba(15, 118, 110, 0.14);
+    color: #115e59;
+    font-size: 0.88rem;
+    font-weight: 600;
+}
+
+.csharp-side-header,
+.compiler-notification-head,
+.csharp-ide-header,
+.csharp-tabs {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    align-items: center;
+}
+
+.csharp-side-card summary {
+    cursor: pointer;
+    font-weight: 700;
+    list-style: none;
+}
+
+.csharp-side-card summary::-webkit-details-marker {
+    display: none;
+}
+
+.csharp-hint-card[open] summary {
+    margin-bottom: 0.85rem;
+}
+
+.csharp-starter-preview {
+    margin: 0.9rem 0 1rem;
+    max-height: 240px;
+    padding: 1rem;
+    overflow: auto;
+    border-radius: 20px;
+    background: #172033;
+    color: #eff6ff;
+    font-family: "Consolas", "Courier New", monospace;
+    line-height: 1.55;
+}
+
+.csharp-starter-preview code {
+    white-space: pre;
+}
+
+.csharp-ide {
+    min-width: 0;
+    overflow: hidden;
+    padding: 1rem;
+    border-radius: 28px;
+    border: 1px solid rgba(112, 96, 255, 0.18);
+    background:
+        radial-gradient(circle at top right, rgba(255, 215, 0, 0.18), transparent 24%),
+        linear-gradient(180deg, #242235 0%, #171727 100%);
+    box-shadow: 0 28px 55px rgba(15, 17, 39, 0.32);
+}
+
+.csharp-ide-header {
+    padding: 0 0.25rem;
+}
+
+.csharp-ide-status {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    flex-wrap: wrap;
+}
+
+.csharp-ide-status .badge-tag {
+    background: rgba(248, 250, 252, 0.12);
+    border: 1px solid rgba(248, 250, 252, 0.14);
+    color: #f8fafc;
+}
+
+.csharp-tabs {
+    justify-content: flex-start;
+    flex-wrap: wrap;
+}
+
+.csharp-tab {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.7rem 1rem;
+    border-radius: 16px 16px 0 0;
+    background: rgba(255, 255, 255, 0.06);
+    color: rgba(255, 255, 255, 0.7);
+    font-family: "Consolas", "Courier New", monospace;
+}
+
+.csharp-tab.active {
+    background: rgba(17, 19, 29, 0.96);
+    color: #fff8e1;
+}
+
+.csharp-compiler-form {
+    gap: 0.85rem;
+}
+
+.csharp-editor-hints {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    padding: 0 0.2rem;
+    color: rgba(255, 255, 255, 0.72);
+    font-size: 0.92rem;
+}
+
+.csharp-editor-shell {
+    border-color: rgba(255, 255, 255, 0.08);
+    scroll-margin-top: 7rem;
+}
+
+.csharp-editor-shell::before {
+    background:
+        radial-gradient(circle at 18px 20px, #ff6b6b 0 5px, transparent 6px),
+        radial-gradient(circle at 38px 20px, #ffd166 0 5px, transparent 6px),
+        radial-gradient(circle at 58px 20px, #06d6a0 0 5px, transparent 6px),
+        linear-gradient(180deg, #1d1d2c 0%, #11111b 100%);
+}
+
+.compiler-notification {
+    min-width: 0;
+    padding: 1rem 1.05rem;
+    border-radius: 18px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(8, 8, 12, 0.88);
+    color: #fef2f2;
+}
+
+.compiler-notification.success {
+    border-color: rgba(34, 197, 94, 0.32);
+    color: #dcfce7;
+}
+
+.compiler-notification.warning {
+    border-color: rgba(251, 191, 36, 0.35);
+    color: #fef3c7;
+}
+
+.compiler-notification.error {
+    border-color: rgba(248, 113, 113, 0.38);
+    color: #fecaca;
+}
+
+.compiler-notification.neutral {
+    color: #e5e7eb;
+}
+
+.compiler-notification p,
+.compiler-notification strong {
+    margin: 0;
+}
+
+.compiler-notification p {
+    margin-top: 0.45rem;
+}
+
+.compiler-notification-head {
+    flex-wrap: wrap;
+}
+
+.csharp-console-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 0.9rem;
+    min-width: 0;
+}
+
+.csharp-results-zone {
+    display: grid;
+    gap: 0.9rem;
+    scroll-margin-top: 7rem;
+    min-width: 0;
+}
+
+.csharp-results-overview,
+.csharp-results-tags {
+    display: flex;
+    gap: 0.75rem;
+    align-items: flex-start;
+}
+
+.csharp-results-overview {
+    justify-content: space-between;
+    flex-wrap: wrap;
+    padding: 0.1rem 0.15rem 0;
+    color: rgba(255, 255, 255, 0.82);
+}
+
+.csharp-results-overview h3 {
+    margin-bottom: 0;
+    color: #f8fafc;
+}
+
+.csharp-results-tags {
+    flex-wrap: wrap;
+}
+
+.code-output-card.subtle {
+    border-color: rgba(148, 163, 184, 0.18);
+    background: linear-gradient(180deg, rgba(250, 252, 255, 0.94), rgba(255, 255, 255, 0.98));
+}
+
+.csharp-concept-review-panel {
+    display: grid;
+    gap: 0.8rem;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    padding: 1.2rem 1.25rem;
+    border-radius: 22px;
+    border: 1px solid rgba(214, 200, 173, 0.82);
+    background: linear-gradient(180deg, rgba(255, 251, 242, 0.98), rgba(255, 255, 255, 0.98));
+    box-shadow: 0 18px 40px rgba(17, 19, 35, 0.18);
+}
+
+.code-lab > .csharp-concept-review-panel,
+.card > .csharp-concept-review-panel {
+    margin-top: 1.25rem;
+}
+
+.csharp-concept-review-head {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    align-items: flex-start;
+}
+
+.csharp-concept-review-head h3 {
+    margin-bottom: 0;
+}
+
+.csharp-concept-review-summary {
+    margin-bottom: 0;
+    font-weight: 700;
+    color: #0f4c81;
+}
+
+.csharp-concept-review-body {
+    margin-bottom: 0;
+    color: var(--muted);
+    line-height: 1.75;
+}
+
+.csharp-action-bar {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 1rem;
+    align-items: center;
+    position: sticky;
+    bottom: 0;
+    z-index: 3;
+    padding: 1rem 0.35rem 0.35rem;
+    margin-top: 0.35rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    background: linear-gradient(180deg, rgba(23, 23, 39, 0.2), rgba(23, 23, 39, 0.96) 42%);
+    color: rgba(255, 255, 255, 0.74);
+}
+
+.csharp-action-buttons,
+.csharp-action-meta {
+    display: flex;
+    gap: 0.8rem;
+    flex-wrap: wrap;
+    align-items: center;
+    min-width: 0;
+}
+
+.csharp-action-meta {
+    justify-content: flex-end;
+}
+
+.csharp-action-buttons .button {
+    min-width: 180px;
+}
+
+[data-system-notification]:focus-visible,
+.code-output-card:focus-visible,
+.code-helper-card:focus-visible {
+    outline: 2px solid rgba(255, 214, 10, 0.78);
+    outline-offset: 3px;
+}
+
+.result-flash {
+    box-shadow: 0 0 0 2px rgba(255, 214, 10, 0.3), 0 20px 50px rgba(15, 17, 39, 0.24);
+}
+
+button:disabled,
+.button:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
 }
 
 .certificate-preview {
@@ -321,9 +1130,110 @@ ul.errorlist,
     place-items: center;
 }
 
+@media (max-width: 1080px) {
+    .csharp-workspace-banner {
+        grid-template-columns: 1fr;
+    }
+
+    .csharp-quick-stats {
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    }
+
+    .csharp-workspace {
+        grid-template-columns: 1fr;
+    }
+
+    .csharp-sidebar {
+        position: static;
+        max-width: none;
+    }
+
+    .csharp-starter-preview {
+        max-height: 220px;
+    }
+}
+
 @media (max-width: 760px) {
     .hero {
         grid-template-columns: 1fr;
+    }
+
+    .section-heading,
+    .code-lab-header,
+    .code-editor-toolbar,
+    .code-runner-actions,
+    .code-output-header,
+    .code-lab-badges,
+    .csharp-side-header,
+    .compiler-notification-head,
+    .csharp-ide-header,
+    .csharp-tabs,
+    .csharp-ide-status,
+    .csharp-editor-hints,
+    .csharp-results-overview,
+    .csharp-concept-review-head {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .csharp-workspace,
+    .code-lab-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .csharp-mobile-nav {
+        display: flex;
+        position: sticky;
+        top: 4.8rem;
+        z-index: 6;
+        overflow-x: auto;
+        padding-bottom: 0.2rem;
+    }
+
+    .csharp-mobile-nav a {
+        white-space: nowrap;
+    }
+
+    .csharp-side-card,
+    .csharp-ide {
+        padding: 1rem;
+    }
+
+    .code-submission-field,
+    .code-editor-shell textarea {
+        min-height: 260px;
+        font-size: 0.94rem;
+    }
+
+    .csharp-action-bar {
+        grid-template-columns: 1fr;
+        padding-top: 0.85rem;
+    }
+
+    .csharp-action-buttons,
+    .csharp-action-meta {
+        width: 100%;
+        justify-content: stretch;
+    }
+
+    .csharp-action-buttons .button {
+        width: 100%;
+        min-width: 0;
+    }
+
+    .csharp-quick-stats {
+        grid-template-columns: 1fr;
+    }
+
+    .csharp-note-chip {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .csharp-status-pill,
+    .csharp-kind-pill {
+        width: 100%;
+        white-space: normal;
     }
 
     .nav-shell,

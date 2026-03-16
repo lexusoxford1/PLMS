@@ -20,7 +20,7 @@ class CourseAdmin(admin.ModelAdmin):
 
 @admin.register(Lesson)
 class LessonAdmin(admin.ModelAdmin):
-    list_display = ("title", "course", "order", "is_published")
+    list_display = ("title", "course", "order", "activity_validator", "activity_language", "is_published")
     list_filter = ("course", "is_published")
     search_fields = ("title", "summary", "lecture_content")
     ordering = ("course", "order")

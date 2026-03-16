@@ -9,7 +9,7 @@
         <h1>{{ lesson.order }}. {{ lesson.title }}</h1>
         <p>{{ lesson.summary }}</p>
     </div>
-    <span class="progress-pill">
+    <span class="progress-pill" data-lesson-progress-pill>
         {% if progress.completed_at %}Completed{% else %}In Progress{% endif %}
     </span>
 </section>
@@ -17,7 +17,7 @@
 <section class="split-grid lesson-layout">
     <article class="card">
         <h2>Lecture</h2>
-        <div class="content-block">{{ lesson.lecture_content|linebreaks }}</div>
+        <div class="content-block rich-content">{{ lesson.lecture_content|safe }}</div>
         <form method="post" action="{% url 'mark_lecture_complete' course.slug lesson.slug %}">
             {% csrf_token %}
             <button type="submit" class="button" {% if progress.lecture_completed %}disabled{% endif %}>
@@ -34,43 +34,571 @@
                 <span>Lecture completed</span>
             </div>
             <div class="check-item">
-                <span class="{% if progress.activity_completed %}status done{% else %}status {% if lesson.has_activity %}open{% else %}done{% endif %}{% endif %}"></span>
-                <span>Activity {% if lesson.has_activity %}submitted{% else %}not required{% endif %}</span>
+                <span
+                    class="{% if progress.activity_completed %}status done{% else %}status {% if lesson.has_activity %}open{% else %}done{% endif %}{% endif %}"
+                    data-activity-check-status
+                ></span>
+                <span>Activity {% if lesson.has_activity %}validated{% else %}not required{% endif %}</span>
             </div>
             <div class="check-item">
                 <span class="{% if progress.quiz_passed %}status done{% else %}status {% if lesson.has_quiz %}open{% else %}done{% endif %}{% endif %}"></span>
                 <span>Quiz {% if lesson.has_quiz %}passed{% else %}not required{% endif %}</span>
             </div>
         </div>
-        {% if next_lesson and progress.completed_at %}
-            <a class="button compact" href="{% url 'lesson_detail' course.slug next_lesson.slug %}">Open Next Lesson</a>
-        {% endif %}
+        <div data-next-lesson-shortcut>
+            {% if next_lesson and progress.completed_at %}
+                <a class="button compact" href="{% url 'lesson_detail' course.slug next_lesson.slug %}">Open Next Lesson</a>
+            {% endif %}
+        </div>
     </article>
 </section>
 
 {% if lesson.has_activity %}
-    <section class="card">
-        <h2>{{ lesson.activity_title|default:"Activity" }}</h2>
-        <div class="content-block">{{ lesson.activity_instructions|linebreaks }}</div>
-        {% if lesson.activity_hint %}
-            <p class="muted">Hint: {{ lesson.activity_hint }}</p>
+    {% if lesson.uses_code_runner %}
+        {% if lesson.activity_language == "csharp" %}
+            <section class="csharp-workspace-shell" data-code-runner-shell>
+                <div class="csharp-workspace-banner">
+                    <div>
+                        <p class="eyebrow">Dedicated C# Compiler</p>
+                        <h2>{{ lesson.activity_title|default:"C# Compiler Lab" }}</h2>
+                        <p>
+                            Work through the task in one place, then compile safely with the lesson runner. You will
+                            see friendly guidance, exact compiler feedback, and your program output below the editor.
+                        </p>
+                    </div>
+                    <div class="csharp-quick-stats">
+                        <div class="csharp-stat-card">
+                            <span class="csharp-stat-label">File</span>
+                            <strong>Program.cs</strong>
+                        </div>
+                        <div class="csharp-stat-card">
+                            <span class="csharp-stat-label">Compiler</span>
+                            <strong>.NET / C#</strong>
+                        </div>
+                        <div class="csharp-stat-card">
+                            <span class="csharp-stat-label">Feedback</span>
+                            <strong>Backend popup</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <nav class="csharp-mobile-nav" aria-label="C# compiler sections">
+                    <a href="#csharp-instructions">Instructions</a>
+                    <a href="#csharp-editor">Compiler</a>
+                    <a href="#csharp-results">Results</a>
+                </nav>
+
+                {% if lesson.activity_validation_rules.starter_code %}
+                    {{ lesson.activity_validation_rules.starter_code|json_script:"csharp-starter-code" }}
+                {% endif %}
+
+                <section class="csharp-workspace">
+                <aside class="csharp-sidebar">
+                    <article class="card csharp-side-card" id="csharp-instructions">
+                        <div class="csharp-side-header">
+                            <h2>Instructions</h2>
+                            <span class="badge-tag">C# lesson</span>
+                        </div>
+                        <div class="content-block rich-content">{{ lesson.activity_instructions|safe }}</div>
+                    </article>
+
+                    <article class="card csharp-side-card csharp-guide-card">
+                        <div class="csharp-side-header">
+                            <h2>Quick Start</h2>
+                            <span class="badge-tag">3 steps</span>
+                        </div>
+                        <ol class="csharp-guide-list">
+                            <li>Read the task and keep your solution inside <code>Main()</code>.</li>
+                            <li>Compile after small changes so errors are easier to fix.</li>
+                            <li>Use the results panel to check compiler notes, output, and hints.</li>
+                        </ol>
+                        <div class="csharp-note-chip-row">
+                            <span class="csharp-note-chip">Program.cs is the active file</span>
+                            <span class="csharp-note-chip">Balanced braces matter</span>
+                            <span class="csharp-note-chip">Run often, fix one issue at a time</span>
+                        </div>
+                    </article>
+
+                    <details class="card csharp-side-card csharp-hint-card" {% if progress.activity_result_data.hint or lesson.activity_hint %}open{% endif %}>
+                        <summary>Stuck? Get a hint</summary>
+                        <p>{{ progress.activity_result_data.hint|default:lesson.activity_hint|default:"Compile the code and read the backend compiler feedback carefully." }}</p>
+                    </details>
+
+                    {% if lesson.activity_validation_rules.starter_code %}
+                        <article class="card csharp-side-card csharp-starter-card">
+                            <div class="csharp-side-header">
+                                <h2>Starter Code</h2>
+                                <span class="badge-tag">Safe reset</span>
+                            </div>
+                            <p class="muted">Need a clean copy? Restore the original lesson code anytime.</p>
+                            <pre class="csharp-starter-preview"><code>{{ lesson.activity_validation_rules.starter_code }}</code></pre>
+                            {% if not progress.activity_completed %}
+                                <button
+                                    type="button"
+                                    class="button secondary compact"
+                                    data-runner-reset
+                                    data-starter-code-id="csharp-starter-code"
+                                >
+                                    Reset Editor
+                                </button>
+                            {% endif %}
+                        </article>
+                    {% endif %}
+
+                    {% if not activity_concept_review %}
+                        <article class="card csharp-side-card">
+                            <div class="csharp-side-header">
+                                <h2>Concept Review</h2>
+                                <span class="badge-tag">Lecture</span>
+                            </div>
+                            <div class="content-block rich-content">{{ lesson.lecture_content|safe }}</div>
+                        </article>
+                    {% endif %}
+                </aside>
+
+                <section class="csharp-ide" data-csharp-compiler-shell id="csharp-editor">
+                    <div class="csharp-ide-header">
+                        <div class="csharp-tabs" aria-hidden="true">
+                            <span class="csharp-tab active">Program.cs</span>
+                            <span class="csharp-tab">Compiler</span>
+                        </div>
+                        <div class="csharp-ide-status">
+                            <span class="badge-tag">Responsive workspace</span>
+                            <span
+                                class="runner-status {% if progress.activity_completed %}success{% elif progress.activity_result_data.errors %}error{% elif progress.activity_feedback_title %}warning{% else %}ready{% endif %}"
+                                data-runner-status
+                            >
+                                {% if progress.activity_completed %}
+                                    Validated
+                                {% elif progress.activity_result_data.errors %}
+                                    Compiler error
+                                {% elif progress.activity_feedback_title %}
+                                    Needs changes
+                                {% else %}
+                                    Ready
+                                {% endif %}
+                            </span>
+                        </div>
+                    </div>
+
+                    <form
+                        method="post"
+                        action="{% url 'submit_activity' course.slug lesson.slug %}"
+                        class="stack-form code-runner-form csharp-compiler-form"
+                        data-code-runner-form
+                        data-api-url="{% url 'api_submit_lesson_activity' course.slug lesson.slug %}"
+                    >
+                        {% csrf_token %}
+                        <div class="code-editor-shell csharp-editor-shell">
+                            {{ activity_form.response }}
+                        </div>
+                        {% if activity_form.response.errors %}
+                            <div class="error-text">{{ activity_form.response.errors }}</div>
+                        {% endif %}
+
+                        <div class="csharp-editor-hints">
+                            <span>Tip: keep `Main()` as your entry point.</span>
+                            <span>Compiler notifications below come from the backend service.</span>
+                        </div>
+
+                        <section class="csharp-results-zone" id="csharp-results" data-runner-results aria-live="polite" aria-atomic="true">
+                        <div class="csharp-results-overview">
+                            <div>
+                                <p class="eyebrow">Results</p>
+                                <h3>Compiler Feedback</h3>
+                            </div>
+                            <div class="csharp-results-tags">
+                                <span class="csharp-status-pill neutral">Backend checked</span>
+                                <span
+                                    class="csharp-status-pill {% if progress.activity_completed %}success{% elif progress.activity_result_data.details.environment_issue %}error{% elif progress.activity_result_data.execution_status == "error" %}error{% elif progress.activity_feedback_title %}warning{% else %}neutral{% endif %}"
+                                    data-runner-results-summary
+                                >
+                                    {% if progress.activity_completed %}
+                                        Status: Success
+                                    {% elif progress.activity_result_data.details.environment_issue %}
+                                        Status: Setup issue
+                                    {% elif progress.activity_result_data.execution_status == "error" %}
+                                        Status: Error
+                                    {% elif progress.activity_feedback_title %}
+                                        Status: Needs changes
+                                    {% else %}
+                                        Status: Waiting
+                                    {% endif %}
+                                </span>
+                            </div>
+                        </div>
+                        <div
+                            class="compiler-notification {% if progress.activity_completed %}success{% elif progress.activity_result_data.notification.level == 'error' or progress.activity_result_data.errors %}error{% elif progress.activity_feedback_title %}warning{% else %}neutral{% endif %}"
+                            data-system-notification
+                            role="status"
+                            tabindex="-1"
+                        >
+                            <div class="compiler-notification-head">
+                                <strong data-system-notification-title>
+                                    {{ progress.activity_result_data.notification.title|default:"C# compiler feedback will appear here." }}
+                                </strong>
+                                <span
+                                    class="csharp-kind-pill {% if progress.activity_completed %}success{% elif progress.activity_result_data.notification.level == 'error' or progress.activity_result_data.errors %}error{% elif progress.activity_feedback_title %}warning{% else %}neutral{% endif %}"
+                                    data-system-notification-kind
+                                >
+                                    {{ progress.activity_result_data.notification.label|default:"Compiler feedback" }}
+                                </span>
+                            </div>
+                            <p data-system-notification-message>
+                                {{ progress.activity_result_data.notification.message|default:"Use Run to compile the current C# program. The backend compiler service will generate the notification you see here." }}
+                            </p>
+                            <p class="muted" data-system-notification-meta>
+                                {% if progress.activity_result_data.notification.location.line %}
+                                    {{ progress.activity_result_data.notification.location.file|default:"Program.cs" }}
+                                    line {{ progress.activity_result_data.notification.location.line }},
+                                    column {{ progress.activity_result_data.notification.location.column }}
+                                {% elif progress.activity_result_data.details.environment_issue %}
+                                    {{ progress.activity_result_data.details.compiler_stage|default:"compiler"|title }} stage issue
+                                {% elif progress.activity_result_data.execution_time_ms %}
+                                    {{ progress.activity_result_data.execution_time_ms }} ms
+                                {% endif %}
+                            </p>
+                        </div>
+
+                        <div
+                            class="code-output-card subtle"
+                            {% if not progress.activity_result_data.notification.detail or progress.activity_result_data.notification.detail == progress.activity_result_data.errors or progress.activity_result_data.notification.detail == progress.activity_result_data.program_output %}hidden{% endif %}
+                            data-system-detail-card
+                        >
+                            <div class="code-output-header">
+                                <h3>Raw Backend Details</h3>
+                                <span class="muted" data-system-detail-caption>Compiler service output</span>
+                            </div>
+                            <pre class="code-console code-console-wrap"><code data-system-detail>{{ progress.activity_result_data.notification.detail }}</code></pre>
+                        </div>
+
+                        <div class="csharp-console-grid">
+                            <div class="code-output-card" {% if not progress.activity_result_data.program_output %}hidden{% endif %} data-runner-output-card>
+                                <div class="code-output-header">
+                                    <h3>Program Output</h3>
+                                    <span class="muted" data-runner-execution-time>
+                                        {% if progress.activity_result_data.execution_time_ms %}
+                                            {{ progress.activity_result_data.execution_time_ms }} ms
+                                        {% endif %}
+                                    </span>
+                                </div>
+                                <pre class="code-console"><code data-runner-output>{{ progress.activity_result_data.program_output }}</code></pre>
+                            </div>
+
+                            <div class="code-output-card danger" {% if not progress.activity_result_data.errors %}hidden{% endif %} data-runner-error-card>
+                                <div class="code-output-header">
+                                    <h3 data-runner-error-title>
+                                        {% if progress.activity_result_data.notification.kind == "csharp_runtime_error" %}
+                                            Runtime Error Details
+                                        {% elif progress.activity_result_data.details.environment_issue %}
+                                            Compiler Environment Details
+                                        {% else %}
+                                            Compiler Details
+                                        {% endif %}
+                                    </h3>
+                                </div>
+                                <pre class="code-console code-console-danger code-console-wrap"><code data-runner-errors>{{ progress.activity_result_data.errors }}</code></pre>
+                            </div>
+                        </div>
+
+                        <div class="code-helper-card" {% if not progress.activity_result_data.learning_suggestion %}hidden{% endif %} data-runner-suggestion-card>
+                            <h3>Learning Suggestion</h3>
+                            <p data-runner-suggestion>{{ progress.activity_result_data.learning_suggestion }}</p>
+                        </div>
+
+                        {% if activity_concept_review %}
+                            <article
+                                class="csharp-concept-review-panel"
+                                data-runner-concept-review
+                                {% if not progress.activity_completed %}hidden{% endif %}
+                            >
+                                <div class="csharp-concept-review-head">
+                                    <div>
+                                        <p class="eyebrow">Activity Review</p>
+                                        <h3>{{ activity_concept_review.title }}</h3>
+                                    </div>
+                                    <span class="badge-tag">{{ activity_concept_review.badge }}</span>
+                                </div>
+                                {% if activity_concept_review.summary %}
+                                    <p class="csharp-concept-review-summary">{{ activity_concept_review.summary }}</p>
+                                {% endif %}
+                                <p class="csharp-concept-review-body">{{ activity_concept_review.body }}</p>
+                            </article>
+                        {% endif %}
+                        </section>
+
+                        <div class="csharp-action-bar">
+                            <div class="csharp-action-buttons">
+                                <button
+                                    type="submit"
+                                    class="button"
+                                    data-runner-submit
+                                    data-idle-label="Compile and Run"
+                                    data-busy-label="Compiling..."
+                                    {% if progress.activity_completed %}disabled{% endif %}
+                                >
+                                    {% if progress.activity_completed %}
+                                        Activity Validated
+                                    {% else %}
+                                        Compile and Run
+                                    {% endif %}
+                                </button>
+                                {% if lesson.activity_validation_rules.starter_code and not progress.activity_completed %}
+                                    <button
+                                        type="button"
+                                        class="button secondary"
+                                        data-runner-reset
+                                        data-starter-code-id="csharp-starter-code"
+                                    >
+                                        Reset Editor
+                                    </button>
+                                {% endif %}
+                                <button
+                                    type="button"
+                                    class="button ghost"
+                                    data-runner-view-results
+                                    aria-controls="csharp-results"
+                                >
+                                    View Results
+                                </button>
+                            </div>
+                            <div class="csharp-action-meta">
+                                <span class="muted" data-runner-attempts>Attempts: {{ progress.activity_attempts|default:0 }}</span>
+                                <span class="muted">Backend-driven compiler notification</span>
+                            </div>
+                        </div>
+                    </form>
+                </section>
+                </section>
+            </section>
+        {% else %}
+            <section class="card code-lab" data-code-runner-shell>
+                <div class="code-lab-header">
+                    <div>
+                        <h2>{{ lesson.activity_title|default:"Activity" }}</h2>
+                        <p class="muted">
+                            Secure {{ lesson.activity_language|upper }} compiler / runtime environment with validation feedback.
+                        </p>
+                    </div>
+                    <div class="code-lab-badges">
+                        <span class="badge-tag">{{ lesson.activity_language|upper }}</span>
+                        <span class="badge-tag">Sandboxed</span>
+                    </div>
+                </div>
+
+                <div class="content-block rich-content">{{ lesson.activity_instructions|safe }}</div>
+
+                <div class="code-lab-grid">
+                    <div class="code-editor-panel">
+                        <div class="code-editor-toolbar">
+                            <span class="code-file">
+                                {% if lesson.activity_language == "python" %}
+                                    main.py
+                                {% elif lesson.activity_language == "php" %}
+                                    main.php
+                                {% else %}
+                                    main.txt
+                                {% endif %}
+                            </span>
+                            <span
+                                class="runner-status {% if progress.activity_completed %}success{% elif progress.activity_result_data.errors %}error{% elif progress.activity_feedback_title %}warning{% else %}ready{% endif %}"
+                                data-runner-status
+                            >
+                                {% if progress.activity_completed %}
+                                    Validated
+                                {% elif progress.activity_result_data.errors %}
+                                    Error
+                                {% elif progress.activity_feedback_title %}
+                                    Needs changes
+                                {% else %}
+                                    Ready
+                                {% endif %}
+                            </span>
+                        </div>
+
+                        <form
+                            method="post"
+                            action="{% url 'submit_activity' course.slug lesson.slug %}"
+                            class="stack-form code-runner-form"
+                            data-code-runner-form
+                            data-api-url="{% url 'api_submit_lesson_activity' course.slug lesson.slug %}"
+                        >
+                            {% csrf_token %}
+                            <div class="code-editor-meta">
+                                {{ activity_form.response.label_tag }}
+                                {% if activity_form.response.help_text %}
+                                    <p class="muted">{{ activity_form.response.help_text }}</p>
+                                {% endif %}
+                            </div>
+                            <div class="code-editor-shell">
+                                {{ activity_form.response }}
+                            </div>
+                            {% if activity_form.response.errors %}
+                                <div class="error-text">{{ activity_form.response.errors }}</div>
+                            {% endif %}
+                            <div class="code-runner-actions">
+                                <button
+                                    type="submit"
+                                    class="button"
+                                    data-runner-submit
+                                    data-idle-label="Run and Check Code"
+                                    data-busy-label="Running..."
+                                    {% if progress.activity_completed %}disabled{% endif %}
+                                >
+                                    {% if progress.activity_completed %}
+                                        Activity Validated
+                                    {% else %}
+                                        Run and Check Code
+                                    {% endif %}
+                                </button>
+                                <span class="muted" data-runner-attempts>
+                                    Attempts: {{ progress.activity_attempts|default:0 }}
+                                </span>
+                            </div>
+                        </form>
+                    </div>
+
+                    <div class="code-results-panel">
+                        <div class="activity-feedback {% if progress.activity_completed %}correct{% elif progress.activity_feedback_title %}incorrect{% endif %}" data-runner-feedback>
+                            <strong data-runner-feedback-title>
+                                {{ progress.activity_feedback_title|default:"Compiler and validation feedback will appear here." }}
+                            </strong>
+                            <p data-runner-feedback-body>
+                                {{ progress.activity_feedback_body|default:"Submit your code to see output, runtime errors, and validation guidance." }}
+                            </p>
+                        </div>
+
+                        <div class="code-output-card" {% if not progress.activity_result_data.program_output %}hidden{% endif %} data-runner-output-card>
+                            <div class="code-output-header">
+                                <h3>Program Output</h3>
+                                <span class="muted" data-runner-execution-time>
+                                    {% if progress.activity_result_data.execution_time_ms %}
+                                        {{ progress.activity_result_data.execution_time_ms }} ms
+                                    {% endif %}
+                                </span>
+                            </div>
+                            <pre class="code-console"><code data-runner-output>{{ progress.activity_result_data.program_output }}</code></pre>
+                        </div>
+
+                        <div class="code-output-card danger" {% if not progress.activity_result_data.errors %}hidden{% endif %} data-runner-error-card>
+                            <div class="code-output-header">
+                                <h3>Compiler / Runtime Errors</h3>
+                            </div>
+                            <pre class="code-console code-console-danger"><code data-runner-errors>{{ progress.activity_result_data.errors }}</code></pre>
+                        </div>
+
+                        <div class="code-helper-card" {% if not progress.activity_result_data.hint and not lesson.activity_hint %}hidden{% endif %} data-runner-hint-card>
+                            <h3>Hint</h3>
+                            <p data-runner-hint>{{ progress.activity_result_data.hint|default:lesson.activity_hint }}</p>
+                        </div>
+
+                        <div class="code-helper-card" {% if not progress.activity_result_data.learning_suggestion %}hidden{% endif %} data-runner-suggestion-card>
+                            <h3>Learning Suggestion</h3>
+                            <p data-runner-suggestion>{{ progress.activity_result_data.learning_suggestion }}</p>
+                        </div>
+                    </div>
+                </div>
+
+                {% if activity_concept_review %}
+                    <article
+                        class="csharp-concept-review-panel"
+                        data-runner-concept-review
+                        {% if not progress.activity_completed %}hidden{% endif %}
+                    >
+                        <div class="csharp-concept-review-head">
+                            <div>
+                                <p class="eyebrow">Activity Review</p>
+                                <h3>{{ activity_concept_review.title }}</h3>
+                            </div>
+                            <span class="badge-tag">{{ activity_concept_review.badge }}</span>
+                        </div>
+                        {% if activity_concept_review.summary %}
+                            <p class="csharp-concept-review-summary">{{ activity_concept_review.summary }}</p>
+                        {% endif %}
+                        <p class="csharp-concept-review-body">{{ activity_concept_review.body }}</p>
+                    </article>
+                {% endif %}
+            </section>
         {% endif %}
-        <form method="post" action="{% url 'submit_activity' course.slug lesson.slug %}" class="stack-form">
-            {% csrf_token %}
-            {{ activity_form.as_p }}
-            <button type="submit" class="button">
-                {% if progress.activity_completed %}Update Activity Submission{% else %}Submit Activity{% endif %}
-            </button>
-        </form>
-    </section>
+    {% else %}
+        <section class="card">
+            <h2>{{ lesson.activity_title|default:"Activity" }}</h2>
+            <div class="content-block rich-content">{{ lesson.activity_instructions|safe }}</div>
+            {% if progress.activity_feedback_title %}
+                <div class="activity-feedback {{ progress.activity_status }}">
+                    <strong>{{ progress.activity_feedback_title }}</strong>
+                    <p>{{ progress.activity_feedback_body }}</p>
+                    {% if progress.activity_attempts %}
+                        <span class="muted">Attempts: {{ progress.activity_attempts }}</span>
+                    {% endif %}
+                </div>
+            {% endif %}
+            {% if progress.activity_result_data.program_output %}
+                <div class="content-block">
+                    <h3>Program Output</h3>
+                    <pre><code>{{ progress.activity_result_data.program_output }}</code></pre>
+                </div>
+            {% endif %}
+            {% if progress.activity_result_data.errors %}
+                <div class="content-block">
+                    <h3>Errors</h3>
+                    <pre><code>{{ progress.activity_result_data.errors }}</code></pre>
+                </div>
+            {% endif %}
+            {% if progress.activity_result_data.hint %}
+                <p class="muted">Hint: {{ progress.activity_result_data.hint }}</p>
+            {% elif lesson.activity_hint %}
+                <p class="muted">Hint: {{ lesson.activity_hint }}</p>
+            {% endif %}
+            {% if progress.activity_result_data.learning_suggestion %}
+                <p class="muted">Learning suggestion: {{ progress.activity_result_data.learning_suggestion }}</p>
+            {% endif %}
+            {% if activity_concept_review %}
+                <article
+                    class="csharp-concept-review-panel"
+                    data-runner-concept-review
+                    {% if not progress.activity_completed %}hidden{% endif %}
+                >
+                    <div class="csharp-concept-review-head">
+                        <div>
+                            <p class="eyebrow">Activity Review</p>
+                            <h3>{{ activity_concept_review.title }}</h3>
+                        </div>
+                        <span class="badge-tag">{{ activity_concept_review.badge }}</span>
+                    </div>
+                    {% if activity_concept_review.summary %}
+                        <p class="csharp-concept-review-summary">{{ activity_concept_review.summary }}</p>
+                    {% endif %}
+                    <p class="csharp-concept-review-body">{{ activity_concept_review.body }}</p>
+                </article>
+            {% endif %}
+            <form method="post" action="{% url 'submit_activity' course.slug lesson.slug %}" class="stack-form">
+                {% csrf_token %}
+                {{ activity_form.as_p }}
+                <button type="submit" class="button" {% if progress.activity_completed %}disabled{% endif %}>
+                    {% if progress.activity_completed %}
+                        Activity Validated
+                    {% else %}
+                        Check Activity Answer
+                    {% endif %}
+                </button>
+            </form>
+        </section>
+    {% endif %}
 {% endif %}
 
 {% if lesson.has_quiz %}
     <section class="card">
         <div class="row-between">
             <div>
-                <h2>Lesson Quiz</h2>
-                <p class="muted">Pass the quiz to finish this lesson and unlock the next one.</p>
+                <h2>{% if next_lesson %}Lesson Quiz{% else %}Final Course Quiz{% endif %}</h2>
+                <p class="muted">
+                    {% if next_lesson %}
+                        Pass the quiz to finish this lesson and unlock the next one.
+                    {% else %}
+                        Pass the final quiz to complete this course and receive your badge and certificate.
+                    {% endif %}
+                </p>
             </div>
             <a class="button compact" href="{% url 'quiz_detail' lesson.quiz.id %}">Take Quiz</a>
         </div>

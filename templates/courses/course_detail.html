@@ -38,6 +38,9 @@
                 <div>
                     <strong>{{ row.lesson.order }}. {{ row.lesson.title }}</strong>
                     <p class="muted">{{ row.lesson.summary|default:"Lecture, activity, and quiz checkpoint." }}</p>
+                    {% if row.lesson.has_quiz %}
+                        <p class="muted">Includes the final multiple-choice quiz for this course.</p>
+                    {% endif %}
                 </div>
                 <div class="card-actions">
                     {% if request.user.is_authenticated and row.accessible %}

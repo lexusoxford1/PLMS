@@ -30,14 +30,23 @@
         </div>
     </header>
 
-    <main class="container page-shell">
+    <section class="toast-stack" data-toast-stack aria-live="polite" aria-atomic="true">
         {% if messages %}
-            <section class="messages">
-                {% for message in messages %}
-                    <div class="message {{ message.tags }}">{{ message }}</div>
-                {% endfor %}
-            </section>
+            {% for message in messages %}
+                <div class="toast {{ message.tags|default:'info' }}" data-toast>
+                    <div class="toast-content">
+                        <strong class="toast-title">{{ message.tags|default:"notice"|title }}</strong>
+                        <p>{{ message }}</p>
+                    </div>
+                    <button type="button" class="toast-close" data-toast-close aria-label="Dismiss notification">
+                        &times;
+                    </button>
+                </div>
+            {% endfor %}
         {% endif %}
+    </section>
+
+    <main class="container page-shell">
         {% block content %}{% endblock %}
     </main>
 

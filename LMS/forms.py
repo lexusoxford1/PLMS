@@ -4,7 +4,7 @@ from django import forms
 class ActivitySubmissionForm(forms.Form):
     response = forms.CharField(
         label="Activity response",
-        widget=forms.Textarea(attrs={"rows": 6}),
+        widget=forms.Textarea(attrs={"rows": 6, "spellcheck": "false"}),
         help_text="Provide your answer, code snippet, or explanation for this lesson activity.",
     )
 

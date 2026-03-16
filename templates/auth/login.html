@@ -17,19 +17,33 @@
     </article>
 
     <article class="card">
-        <h2>Continue with Google</h2>
-        <p class="muted">Use your Google account to create or access your PLMS learner profile.</p>
-        {% if social_providers.google.enabled %}
-            <form method="post" action="{% provider_login_url 'google' process='login' %}" class="stack-form">
-                {% csrf_token %}
-                <button type="submit" class="button google-button">Sign in with Google</button>
-            </form>
-        {% else %}
-            <p class="muted">
-                Google sign-in is not active yet. Add both GOOGLE_CLIENT_ID and
-                GOOGLE_CLIENT_SECRET to your environment first.
-            </p>
-        {% endif %}
+        <h2>Social Sign-in</h2>
+        <p class="muted">Use Google or GitHub to create or access your PLMS learner profile.</p>
+        <div class="stack-form">
+            {% if social_providers.google.enabled %}
+                <form method="post" action="{% provider_login_url 'google' process='login' %}" class="stack-form">
+                    {% csrf_token %}
+                    <button type="submit" class="button google-button">Sign in with Google</button>
+                </form>
+            {% else %}
+                <p class="muted">
+                    Google sign-in is not active yet. Add both GOOGLE_CLIENT_ID and
+                    GOOGLE_CLIENT_SECRET to your environment first.
+                </p>
+            {% endif %}
+
+            {% if social_providers.github.enabled %}
+                <form method="post" action="{% provider_login_url 'github' process='login' %}" class="stack-form">
+                    {% csrf_token %}
+                    <button type="submit" class="button github-button">Sign in with GitHub</button>
+                </form>
+            {% else %}
+                <p class="muted">
+                    GitHub sign-in is not active yet. Add both GITHUB_CLIENT_ID and
+                    GITHUB_CLIENT_SECRET to your environment first.
+                </p>
+            {% endif %}
+        </div>
     </article>
 </section>
 {% endblock %}

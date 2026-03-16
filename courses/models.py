@@ -58,6 +58,9 @@ class Course(models.Model):
 
 
 class Lesson(models.Model):
+    ACTIVITY_VALIDATOR_PATTERN = "pattern"
+    ACTIVITY_VALIDATOR_CODE = "code_runner"
+
     course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name="lessons")
     title = models.CharField(max_length=200)
     slug = models.SlugField(max_length=220, blank=True)
@@ -67,6 +70,7 @@ class Lesson(models.Model):
     activity_title = models.CharField(max_length=200, blank=True)
     activity_instructions = models.TextField(blank=True)
     activity_hint = models.TextField(blank=True)
+    activity_validation_rules = models.JSONField(default=dict, blank=True)
     is_published = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -91,6 +95,25 @@ class Lesson(models.Model):
     @property
     def has_activity(self):
         return bool(self.activity_instructions.strip())
+
+    @property
+    def has_activity_validation(self):
+        return bool(self.activity_validation_rules)
+
+    @property
+    def activity_validator(self):
+        rules = self.activity_validation_rules or {}
+        if rules.get("validator") == self.ACTIVITY_VALIDATOR_CODE or rules.get("language"):
+            return self.ACTIVITY_VALIDATOR_CODE
+        return self.ACTIVITY_VALIDATOR_PATTERN
+
+    @property
+    def activity_language(self):
+        return (self.activity_validation_rules or {}).get("language", "")
+
+    @property
+    def uses_code_runner(self):
+        return self.activity_validator == self.ACTIVITY_VALIDATOR_CODE
 
     @property
     def has_quiz(self):
