@@ -1,0 +1,46 @@
+<section class="achievement-hero">
+    <div class="achievement-hero__summary">
+        <p class="eyebrow">Level Progress</p>
+        <h1>Level {{ summary.level }}</h1>
+        <p class="achievement-hero__copy">
+            You have earned {{ summary.total_xp }} XP across {{ summary.earned_badges }} badges.
+            {% if summary.xp_to_next_level %}
+                {{ summary.xp_to_next_level }} XP to reach Level {{ summary.next_level }}.
+            {% endif %}
+        </p>
+        <div class="achievement-level-strip">
+            <span class="achievement-level-strip__label">XP Progress</span>
+            <strong>{{ summary.progress_in_level }}/{{ summary.current_span }}</strong>
+        </div>
+        <div class="achievement-progress achievement-progress--hero">
+            <span class="achievement-progress__fill" style="width: {{ summary.progress_percent }}%"></span>
+        </div>
+        <div class="achievement-hero__stats">
+            <div class="achievement-hero__stat">
+                <span>Total XP</span>
+                <strong>{{ summary.total_xp }}</strong>
+            </div>
+            <div class="achievement-hero__stat">
+                <span>Milestones</span>
+                <strong>{{ summary.milestone_badges }}</strong>
+            </div>
+            <div class="achievement-hero__stat">
+                <span>Course Badges</span>
+                <strong>{{ summary.course_badges }}</strong>
+            </div>
+        </div>
+    </div>
+
+    <div class="achievement-hero__spotlight">
+        {% if featured_badge %}
+            <p class="eyebrow">Featured Mission</p>
+            {% include "badges/_badge_card.html" with badge=featured_badge.badge award=featured_badge.award status=featured_badge.status status_label=featured_badge.status_label helper_text=featured_badge.helper_text progress_percent=featured_badge.progress_percent progress_text=featured_badge.progress_text xp_reward=featured_badge.xp_reward featured=1 %}
+        {% else %}
+            <article class="card">
+                <p class="eyebrow">Featured Mission</p>
+                <h2>No badge missions yet</h2>
+                <p>Enroll in a course to start collecting XP and unlocking modern achievement cards.</p>
+            </article>
+        {% endif %}
+    </div>
+</section>

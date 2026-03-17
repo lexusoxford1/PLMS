@@ -2,7 +2,7 @@ from courses.models import Course
 
 from .builders import (
     build_activity_content,
-    build_activity_validation,
+    build_code_activity_validation,
     build_lesson_content,
     required_pattern,
 )
@@ -12,11 +12,11 @@ PHP_FOUNDATIONS = {
     "title": "PHP Programming Foundations",
     "slug": "php-programming-foundations",
     "description": (
-        "Study core PHP syntax and logic through guided lessons on variables, control flow, functions, arrays, and beginner problem-solving."
+        "Build a strong start in PHP with progressive lessons on syntax, variables, conditions, loops, functions, arrays, and problem-solving."
     ),
     "overview": (
-        "After completing this course, the learner will be able to write basic PHP scripts, process simple program logic, "
-        "and understand the foundations needed for web-oriented programming."
+        "After completing this course, the learner will be able to write simple PHP scripts, "
+        "use core control structures, and organize beginner-level solutions using functions and arrays."
     ),
     "difficulty": Course.BEGINNER,
     "estimated_hours": 10,
@@ -24,135 +24,152 @@ PHP_FOUNDATIONS = {
         {
             "title": "Getting Started with PHP",
             "slug": "getting-started-with-php",
-            "summary": "Learn PHP opening tags, output statements, and the role of server-side scripting.",
+            "summary": "Understand the structure of a PHP script and display output in the course runner.",
             "lecture_content": build_lesson_content(
                 [
-                    "PHP is a server-side programming language often used to create dynamic web pages and process form data.",
-                    "Even when you begin with simple scripts, you are already learning the logic that powers many web applications.",
+                    "PHP is a popular scripting language used for web development, automation, and server-side logic.",
+                    "A simple CLI-style script is a great place to begin because it helps you focus on core programming logic without interface complexity.",
                 ],
                 """
                 <?php
-                echo "Hello, PHP learner!";
-                echo "<br>";
-                echo "Welcome to programming foundations.";
-                ?>
+                echo "Hello, PHP learner!" . PHP_EOL;
+                echo "Welcome to programming foundations." . PHP_EOL;
                 """,
                 [
-                    "PHP code starts inside <?php and ends with ?>.",
+                    "PHP code usually starts with <?php.",
                     "echo outputs text or values.",
                     "Statements usually end with a semicolon.",
                 ],
             ),
-            "activity_title": "Activity 1: Basic PHP Output",
+            "activity_title": "Activity 1: Script Introduction",
             "activity_instructions": build_activity_content(
-                "Create a simple PHP script that prints a short introduction.",
+                "Write a short PHP program that introduces the learner.",
                 [
-                    "Use echo to display your name.",
-                    "Display the phrase I am learning PHP.",
-                    "Display one more encouraging line.",
+                    "Print your name on one line.",
+                    "Print I am learning PHP on the next line.",
+                    "Print one more motivational message.",
                 ],
                 """
                 <?php
                 // Write your echo statements here
-                ?>
                 """,
             ),
-            "activity_hint": "Each echo line should end with a semicolon.",
-            "activity_validation": build_activity_validation(
-                [
-                    required_pattern(r"\becho\b", "three echo statements", count=3),
-                    required_pattern(r"(php|learning)", "a message about PHP or learning"),
-                ],
+            "activity_hint": "Use PHP_EOL or \\n if you want each echo to appear on a new line.",
+            "activity_validation": build_code_activity_validation(
+                "php",
+                expected_output=None,
+                expected_output_contains=["I am learning PHP"],
                 success_explanation=(
-                    "Your answer is correct because it uses echo statements to display multiple lines of output in a PHP script."
+                    "Your answer is correct because it runs successfully and uses echo multiple times to produce clear console output."
                 ),
                 failure_hint=(
-                    "Use at least three echo statements and include a line that mentions PHP or learning."
+                    "Use at least three echo statements and include a line about PHP or learning."
                 ),
+                starter_code="""
+                <?php
+                // Write your echo statements here
+                """,
+                required_patterns=[
+                    required_pattern(r"\becho\b", "three echo statements", count=3),
+                    required_pattern(r"(PHP|learning)", "a message about PHP or learning"),
+                ],
+                ignore_case=True,
+                min_output_lines=3,
+                learning_suggestion="Try changing one printed line and run the code again to see how the output changes.",
+                accept_alternative_solutions=True,
             ),
         },
         {
             "title": "Variables and Data Types",
             "slug": "php-variables-and-data-types",
-            "summary": "Store values in variables and use strings, integers, and floating-point numbers.",
+            "summary": "Declare variables and use strings, integers, floats, and booleans.",
             "lecture_content": build_lesson_content(
                 [
-                    "In PHP, a variable starts with a dollar sign. Variables allow your script to keep data that can be reused or updated later.",
-                    "PHP supports common data types such as strings for text, integers for whole numbers, and floats for decimal numbers.",
+                    "Variables store data that your program can read and update.",
+                    "In PHP, variables begin with a dollar sign and can hold values such as strings, integers, floats, and booleans.",
                 ],
                 """
                 <?php
                 $studentName = "Lia";
                 $age = 20;
                 $average = 91.4;
+                $isReady = true;
 
-                echo $studentName;
-                echo "<br>";
-                echo $age;
-                echo "<br>";
-                echo $average;
-                ?>
+                echo $studentName . PHP_EOL;
+                echo $age . PHP_EOL;
+                echo $average . PHP_EOL;
+                echo ($isReady ? "true" : "false") . PHP_EOL;
                 """,
                 [
                     "Variable names in PHP begin with $.",
-                    "Strings, integers, and floats are common basic data types.",
+                    "Strings store text, integers store whole numbers, floats store decimals, and booleans store true or false.",
                     "Clear variable names improve readability.",
                 ],
             ),
-            "activity_title": "Activity 2: Learner Profile Variables",
+            "activity_title": "Activity 2: Student Information Program",
             "activity_instructions": build_activity_content(
-                "Create variables for a simple learner profile and display them.",
+                "Create variables that describe a learner and display them.",
                 [
-                    "Create a variable for name.",
-                    "Create a variable for age.",
-                    "Create a variable for favorite language feature.",
-                    "Echo each value with a label.",
+                    "Declare a variable for name.",
+                    "Declare a variable for age.",
+                    "Declare a bool variable for whether the learner is ready.",
+                    "Print all values using echo.",
                 ],
                 """
                 <?php
                 $name = "";
                 $age = 0;
-                $favoriteFeature = "";
-                ?>
+                $isReady = true;
                 """,
             ),
-            "activity_hint": "You can join strings and variables using the . operator in PHP.",
-            "activity_validation": build_activity_validation(
-                [
-                    required_pattern(r"\$name\b", "the $name variable"),
-                    required_pattern(r"\$age\b", "the $age variable"),
-                    required_pattern(r"\$favoriteFeature\b", "the $favoriteFeature variable"),
-                    required_pattern(r"\becho\b", "an echo statement"),
-                ],
+            "activity_hint": "Use the . operator to join text and values, and convert the bool to text if you want a clearer final line.",
+            "activity_validation": build_code_activity_validation(
+                "php",
+                expected_output=None,
                 success_explanation=(
-                    "This is correct because it declares the required PHP variables and displays learner information with echo."
+                    "This is correct because it declares the expected PHP variables, runs successfully, and outputs them using echo."
                 ),
                 failure_hint=(
-                    "Create the named variables with $ and echo their values so the learner profile is shown."
+                    "Declare $name, $age, and $isReady, then print them with echo."
                 ),
+                starter_code="""
+                <?php
+                $name = "";
+                $age = 0;
+                $isReady = true;
+                """,
+                required_patterns=[
+                    required_pattern(r"\$name\b", "the $name variable"),
+                    required_pattern(r"\$age\b", "the $age variable"),
+                    required_pattern(r"\$isReady\b", "the $isReady variable"),
+                    required_pattern(r"\becho\b", "an echo statement"),
+                ],
+                ignore_case=True,
+                min_output_lines=2,
+                learning_suggestion="After it runs, try changing one variable value and rerun the code to see how the output updates.",
+                accept_alternative_solutions=True,
             ),
         },
         {
             "title": "Conditional Statements",
             "slug": "php-conditional-statements",
-            "summary": "Decide between actions using if, elseif, and else.",
+            "summary": "Make decisions using if, elseif, and else.",
             "lecture_content": build_lesson_content(
                 [
-                    "Conditional statements make a program responsive. They let your script react differently based on scores, choices, or input values.",
-                    "PHP checks conditions in order and runs the first matching block.",
+                    "Programs make decisions by checking conditions that evaluate to true or false.",
+                    "In PHP, conditional statements let you choose which block of code should run in a given situation.",
                 ],
                 """
                 <?php
                 $score = 82;
 
                 if ($score >= 90) {
-                    echo "Excellent";
+                    echo "Excellent" . PHP_EOL;
                 } elseif ($score >= 75) {
-                    echo "Passed";
+                    echo "Passed" . PHP_EOL;
                 } else {
-                    echo "Needs improvement";
+                    echo "Needs improvement" . PHP_EOL;
                 }
-                ?>
                 """,
                 [
                     "if checks the first condition.",
@@ -160,57 +177,76 @@ PHP_FOUNDATIONS = {
                     "else handles the remaining case.",
                 ],
             ),
-            "activity_title": "Activity 3: Grade Feedback Checker",
+            "activity_title": "Activity 3: Result Evaluator",
             "activity_instructions": build_activity_content(
-                "Write a PHP script that gives feedback for a learner score.",
+                "Write a program that checks whether a learner passed.",
                 [
-                    "Create a score variable.",
-                    "If the score is 75 or higher, echo Passed.",
-                    "Otherwise, echo Study and try again.",
+                    "Declare a score variable.",
+                    "If the score is 75 or higher, print Passed.",
+                    "Otherwise, print Study and try again.",
                 ],
                 """
                 <?php
                 $score = 0;
-                ?>
                 """,
             ),
             "activity_hint": "Remember that PHP conditions go inside parentheses.",
-            "activity_validation": build_activity_validation(
-                [
-                    required_pattern(r"\bif\s*\(", "an if statement"),
-                    required_pattern(r"\$score\s*>=\s*75", "a condition that checks $score >= 75"),
-                    required_pattern(r"passed", "a passed output"),
-                    required_pattern(r"(study|try again)", "a retry message"),
-                ],
+            "activity_validation": build_code_activity_validation(
+                "php",
+                expected_output=None,
+                expected_output_patterns=[r"\b(Passed|Study and try again)\b"],
                 success_explanation=(
-                    "Your solution is correct because it uses conditional logic to separate passing and non-passing results."
+                    "Your solution is correct because it runs and uses conditional logic to separate passing and non-passing outcomes."
                 ),
                 failure_hint=(
-                    "Use an if condition with $score >= 75, then provide both a passing message and a retry message."
+                    "Use an if statement with $score >= 75 and include both a pass message and a retry message."
                 ),
+                starter_code="""
+                <?php
+                $score = 0;
+                """,
+                required_patterns=[
+                    required_pattern(r"\bif\s*\(", "an if statement"),
+                    required_pattern(r"\$score\s*>=\s*75", "a condition that checks $score >= 75"),
+                    required_pattern(r"Passed", "a passed output"),
+                    required_pattern(r"(Study|try again)", "a retry message"),
+                ],
+                ignore_case=True,
+                min_output_lines=1,
+                concept_review={
+                    "title": "Concept Review",
+                    "badge": "Unlocked after success",
+                    "summary": "Conditional logic helps a program choose between different outcomes.",
+                    "body": (
+                        "This activity uses an if/else decision. The condition $score >= 75 checks whether the "
+                        "learner passed. If that condition is true, the program prints Passed. Otherwise, the else "
+                        "block runs and prints Study and try again."
+                    ),
+                },
+                learning_suggestion="Trace which branch should run for the score value you chose before running the code again.",
+                accept_alternative_solutions=True,
             ),
         },
         {
             "title": "Loops and Repetition",
             "slug": "php-loops-and-repetition",
-            "summary": "Use loops to repeat actions using for and while.",
+            "summary": "Repeat tasks with for and while loops.",
             "lecture_content": build_lesson_content(
                 [
-                    "Loops reduce repetitive code and let you process repeated tasks efficiently.",
-                    "A for loop is helpful when you know the number of repetitions, while a while loop continues as long as a condition remains true.",
+                    "Loops allow a program to repeat instructions efficiently instead of copying the same code many times.",
+                    "A for loop is useful for counting, while a while loop is helpful when repetition depends on a changing condition.",
                 ],
                 """
                 <?php
                 for ($i = 1; $i <= 5; $i++) {
-                    echo "Practice round " . $i . "<br>";
+                    echo "Practice round " . $i . PHP_EOL;
                 }
 
                 $countdown = 3;
                 while ($countdown > 0) {
-                    echo $countdown . "<br>";
+                    echo $countdown . PHP_EOL;
                     $countdown--;
                 }
-                ?>
                 """,
                 [
                     "for loops combine start, condition, and update in one line.",
@@ -218,53 +254,63 @@ PHP_FOUNDATIONS = {
                     "Loops are useful for counters, lists, and repeated output.",
                 ],
             ),
-            "activity_title": "Activity 4: Repetition Practice",
+            "activity_title": "Activity 4: Daily Practice Loop",
             "activity_instructions": build_activity_content(
-                "Create a loop that displays five practice messages.",
+                "Use a loop to simulate daily programming practice.",
                 [
-                    "Use a for loop from 1 to 5.",
-                    "Echo Practice step and the current loop number.",
-                    "After the loop, echo Finished practicing.",
+                    "Create a for loop from 1 to 5.",
+                    "Inside the loop, print Practice day followed by the number.",
+                    "After the loop, print Keep going.",
                 ],
                 """
                 <?php
                 // Write your loop here
-                ?>
                 """,
             ),
             "activity_hint": "Use . to combine text and numbers inside echo.",
-            "activity_validation": build_activity_validation(
-                [
+            "activity_validation": build_code_activity_validation(
+                "php",
+                expected_output=None,
+                expected_output_contains=["Practice day", "Keep going"],
+                success_explanation=(
+                    "This answer is correct because it runs and uses a counting loop to repeat the output for five practice days."
+                ),
+                failure_hint=(
+                    "Create a for loop that starts at 1, ends at 5, and prints each practice day."
+                ),
+                starter_code="""
+                <?php
+                // Write your loop here
+                """,
+                required_patterns=[
                     required_pattern(r"\bfor\s*\(", "a for loop"),
                     required_pattern(r"\$i\s*=\s*1", "a loop that starts at 1"),
                     required_pattern(r"\$i\s*<=\s*5", "a loop condition that goes to 5"),
                     required_pattern(r"\becho\b", "an echo statement in the loop"),
                 ],
-                success_explanation=(
-                    "This answer is correct because it uses a loop to repeat output across five practice steps."
-                ),
-                failure_hint=(
-                    "Create a for loop that starts at 1, ends at 5, and echoes each practice step."
-                ),
+                ignore_case=True,
+                min_output_lines=6,
+                learning_suggestion="If the runner succeeds, compare the loop bounds with the number of lines you expect to print.",
+                accept_alternative_solutions=True,
             ),
         },
         {
             "title": "Functions and Reusable Logic",
             "slug": "php-functions-and-reusable-logic",
-            "summary": "Create functions that organize and reuse tasks.",
+            "summary": "Organize code into functions that can be reused.",
             "lecture_content": build_lesson_content(
                 [
-                    "Functions help you group instructions into reusable blocks of logic.",
-                    "They make your programs easier to read because each function can focus on one clear responsibility.",
+                    "Functions group related instructions into named units, making a program easier to read and maintain.",
+                    "Once you define a function, you can call it whenever the same task is needed again.",
                 ],
                 """
                 <?php
-                function greet($name) {
-                    echo "Hello, " . $name;
+                function showGoal($topic) {
+                    echo "I am practicing " . $topic . PHP_EOL;
                 }
 
-                greet("Nina");
-                ?>
+                showGoal("loops");
+                showGoal("functions");
                 """,
                 [
                     "function defines a reusable block of code.",
@@ -272,46 +318,57 @@ PHP_FOUNDATIONS = {
                     "Calling a function runs the code inside it.",
                 ],
             ),
-            "activity_title": "Activity 5: Encouragement Function",
+            "activity_title": "Activity 5: Study Goal Function",
             "activity_instructions": build_activity_content(
-                "Create a function that prints a study message.",
+                "Create a function that prints a learning goal.",
                 [
-                    "Define a function named showTopic.",
-                    "Let it receive one parameter named topic.",
-                    "Echo I am practicing followed by the topic.",
-                    "Call the function two times with different topics.",
+                    "Define a function named showGoal that receives a topic parameter.",
+                    "Inside the function, print I am practicing plus the topic.",
+                    "Call the function two times with different values.",
                 ],
                 """
                 <?php
-                function showTopic($topic) {
+                function showGoal($topic) {
                     // Write your echo statement here
                 }
-                ?>
                 """,
             ),
             "activity_hint": "A parameter works like a variable inside the function body.",
-            "activity_validation": build_activity_validation(
-                [
-                    required_pattern(r"function\s+showTopic\s*\(\s*\$topic\s*\)", "the showTopic($topic) function"),
-                    required_pattern(r"\becho\b", "an echo statement inside the function"),
-                    required_pattern(r"showTopic\s*\(", "two calls to showTopic()", count=3),
-                ],
+            "activity_validation": build_code_activity_validation(
+                "php",
+                expected_output=None,
+                expected_output_contains=["I am practicing"],
                 success_explanation=(
-                    "Your answer is correct because it creates a reusable function with a parameter and calls it multiple times."
+                    "Your answer is correct because it runs, defines a reusable function with a parameter, and calls it multiple times."
                 ),
                 failure_hint=(
-                    "Define showTopic($topic), echo a practice message inside it, and call showTopic() twice."
+                    "Define showGoal($topic), print a message inside it, and call showGoal() twice."
                 ),
+                starter_code="""
+                <?php
+                function showGoal($topic) {
+                    // Write your echo statement here
+                }
+                """,
+                required_patterns=[
+                    required_pattern(r"function\s+showGoal\s*\(\s*\$topic\s*\)", "the showGoal($topic) function"),
+                    required_pattern(r"\becho\b", "an echo statement inside the function"),
+                    required_pattern(r"showGoal\s*\(", "two calls to showGoal()", count=3),
+                ],
+                ignore_case=True,
+                min_output_lines=2,
+                learning_suggestion="Once it runs, try calling the function with a third topic to reinforce how parameters change output.",
+                accept_alternative_solutions=True,
             ),
         },
         {
             "title": "Arrays, Simple Problem Solving, and Final Quiz",
             "slug": "php-arrays-problem-solving-and-final-quiz",
-            "summary": "Work with arrays, summarize values, and complete the final course quiz.",
+            "summary": "Use arrays to handle multiple values, solve a beginner problem, and finish with the final quiz.",
             "lecture_content": build_lesson_content(
                 [
-                    "Arrays store multiple related values in one variable, making it easier to manage groups of data such as scores or names.",
-                    "When arrays are combined with loops, you can solve beginner-friendly problems like totals, counts, and summaries.",
+                    "Arrays allow you to store multiple related values together.",
+                    "When you combine arrays with loops and functions, you can solve practical beginner problems like totals, counts, and summaries.",
                 ],
                 """
                 <?php
@@ -322,8 +379,7 @@ PHP_FOUNDATIONS = {
                     $total += $score;
                 }
 
-                echo "Total: " . $total;
-                ?>
+                echo "Total: " . $total . PHP_EOL;
                 """,
                 [
                     "Arrays in PHP can be written with square brackets.",
@@ -331,7 +387,7 @@ PHP_FOUNDATIONS = {
                     "Breaking a problem into steps helps you code with confidence.",
                 ],
             ),
-            "activity_title": "Activity 6: Score Report",
+            "activity_title": "Activity 6: Score Total Calculator",
             "activity_instructions": build_activity_content(
                 "Create a PHP script that works with an array of scores.",
                 [
@@ -343,23 +399,34 @@ PHP_FOUNDATIONS = {
                 <?php
                 $scores = [70, 85, 90, 95];
                 $total = 0;
-                ?>
                 """,
             ),
             "activity_hint": "count($scores) gives you the number of values in the array.",
-            "activity_validation": build_activity_validation(
-                [
+            "activity_validation": build_code_activity_validation(
+                "php",
+                expected_output=None,
+                expected_output_contains=["Total"],
+                success_explanation=(
+                    "This solution is correct because it runs, stores multiple scores in an array, iterates through them, and computes a total."
+                ),
+                failure_hint=(
+                    "Use a $scores array, iterate with foreach, add each score to $total, and echo the result."
+                ),
+                starter_code="""
+                <?php
+                $scores = [70, 85, 90, 95];
+                $total = 0;
+                """,
+                required_patterns=[
                     required_pattern(r"\$scores\s*=\s*\[", "a $scores array"),
                     required_pattern(r"\bforeach\s*\(", "a foreach loop"),
                     required_pattern(r"total\s*\+=", "logic that adds each score to $total"),
                     required_pattern(r"\becho\b", "an echo statement for the result"),
                 ],
-                success_explanation=(
-                    "This is correct because it stores scores in an array, loops through them, and calculates a total."
-                ),
-                failure_hint=(
-                    "Use a $scores array, iterate with foreach, add each score to $total, and echo the result."
-                ),
+                ignore_case=True,
+                min_output_lines=1,
+                learning_suggestion="After it runs, compare the total you printed with a hand calculation to check your logic.",
+                accept_alternative_solutions=True,
             ),
             "quiz": {
                 "title": "PHP Final Quiz",

@@ -1,0 +1,35 @@
+{% if pending_badge_unlocks %}
+    <section class="badge-celebration" data-badge-celebration hidden>
+        <div class="badge-celebration__backdrop" data-badge-close></div>
+        <div class="badge-celebration__dialog" role="dialog" aria-modal="true" aria-labelledby="badge-celebration-title">
+            <button type="button" class="badge-celebration__close" data-badge-close aria-label="Close badge celebration">
+                &times;
+            </button>
+            <p class="eyebrow">Achievement Unlocked</p>
+            <h2 id="badge-celebration-title">A new badge just landed in your collection.</h2>
+            <p class="badge-celebration__copy">
+                Your latest progress unlocked a fresh achievement and added extra XP to your learner level.
+            </p>
+
+            <div class="badge-celebration__slides">
+                {% for award in pending_badge_unlocks %}
+                    <div class="badge-celebration__slide" data-badge-slide {% if not forloop.first %}hidden{% endif %}>
+                        {% include "badges/_badge_card.html" with badge=award.badge award=award status="earned" status_label="Unlocked" progress_percent=100 progress_text="1/1" xp_reward=award.badge.xp_reward featured=1 %}
+                    </div>
+                {% endfor %}
+            </div>
+
+            <div class="badge-celebration__footer">
+                <span class="badge-celebration__progress" data-badge-progress>
+                    1 / {{ pending_badge_unlocks|length }}
+                </span>
+                <div class="badge-celebration__actions">
+                    <a class="button compact secondary" href="{% url 'badge_list' %}">View Badges</a>
+                    <button type="button" class="button compact" data-badge-next>
+                        {% if pending_badge_unlocks|length > 1 %}Next Badge{% else %}Continue{% endif %}
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+{% endif %}

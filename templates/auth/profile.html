@@ -1,33 +1,636 @@
 {% extends "base.html" %}
 
-{% block title %}Profile{% endblock %}
+{% block title %}Profile Dashboard{% endblock %}
+{% block page_shell_class %}page-shell--wide{% endblock %}
 
 {% block content %}
-<section class="split-grid">
-    <article class="card">
-        <p class="eyebrow">Profile</p>
-        <h1>Update your learner details</h1>
-        <form method="post" class="stack-form">
-            {% csrf_token %}
-            {{ form.as_p }}
-            <button type="submit" class="button">Save Changes</button>
-        </form>
-    </article>
-
-    <article class="card">
-        <h2>Authentication Providers</h2>
-        <div class="stack-list">
-            <div class="stack-item">
-                <strong>Primary Sign-in Method</strong>
-                <span>{{ request.user.get_auth_provider_display }}</span>
-            </div>
-            {% for key, provider in social_providers.items %}
-                <div class="stack-item">
-                    <strong>{{ provider.label }}</strong>
-                    <span>{% if provider.enabled %}Available for login{% else %}Environment keys missing{% endif %}</span>
+<section class="profile-workspace" data-profile-workspace data-default-panel="{{ active_profile_panel }}">
+    <aside class="profile-sidebar">
+        <div class="profile-sidebar__chrome card">
+            <div class="profile-sidebar__header">
+                <div class="profile-sidebar__identity">
+                    <div class="profile-avatar profile-avatar--sidebar">
+                        {% if request.user.profile_picture %}
+                            <img src="{{ request.user.profile_picture.url }}" alt="{{ request.user.display_name }}">
+                        {% else %}
+                            <span>{{ request.user.initials }}</span>
+                        {% endif %}
+                    </div>
+                    <div class="profile-sidebar__identity-copy">
+                        <p class="eyebrow">Profile Workspace</p>
+                        <strong>{{ request.user.display_name }}</strong>
+                        <span>{{ request.user.profile_title }}</span>
+                    </div>
                 </div>
-            {% endfor %}
+                <button
+                    type="button"
+                    class="profile-sidebar__toggle"
+                    data-profile-toggle
+                    aria-expanded="true"
+                    aria-label="Collapse sidebar"
+                    title="Collapse sidebar"
+                >
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M15 6 9 12l6 6" />
+                    </svg>
+                </button>
+            </div>
+            <p class="profile-sidebar__copy">
+                Switch sections without making the page feel long or crowded.
+            </p>
         </div>
-    </article>
+
+        <nav class="profile-sidebar__nav card" aria-label="Profile sections">
+            <button type="button" class="profile-sidebar__nav-button" data-profile-nav="overview" aria-label="Overview" title="Overview">
+                <span class="profile-sidebar__nav-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M4 10.5 12 4l8 6.5" />
+                        <path d="M6 9.5V20h12V9.5" />
+                        <path d="M10 20v-6h4v6" />
+                    </svg>
+                </span>
+                <span class="profile-sidebar__nav-text">
+                    <span>Overview</span>
+                    <small>Summary and analytics</small>
+                </span>
+            </button>
+            <button type="button" class="profile-sidebar__nav-button" data-profile-nav="learning" aria-label="Learning" title="Learning">
+                <span class="profile-sidebar__nav-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M4 6.5 12 4l8 2.5v11L12 20l-8-2.5Z" />
+                        <path d="M12 4v16" />
+                        <path d="M8 8h1" />
+                        <path d="M8 11h1" />
+                        <path d="M15 8h1" />
+                    </svg>
+                </span>
+                <span class="profile-sidebar__nav-text">
+                    <span>Learning</span>
+                    <small>History and statistics</small>
+                </span>
+            </button>
+            <button type="button" class="profile-sidebar__nav-button" data-profile-nav="achievements" aria-label="Achievements" title="Achievements">
+                <span class="profile-sidebar__nav-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24">
+                        <circle cx="12" cy="8.5" r="4.5" />
+                        <path d="m9 13 1.2 7 1.8-1.8 1.8 1.8 1.2-7" />
+                    </svg>
+                </span>
+                <span class="profile-sidebar__nav-text">
+                    <span>Achievements</span>
+                    <small>Badges and progress</small>
+                </span>
+            </button>
+            <button type="button" class="profile-sidebar__nav-button" data-profile-nav="settings" aria-label="Edit Profile" title="Edit Profile">
+                <span class="profile-sidebar__nav-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                        <path d="m18.5 2.5 3 3L12 15l-4 1 1-4Z" />
+                    </svg>
+                </span>
+                <span class="profile-sidebar__nav-text">
+                    <span>Edit Profile</span>
+                    <small>Personal information</small>
+                </span>
+            </button>
+            <button type="button" class="profile-sidebar__nav-button" data-profile-nav="security" aria-label="Security" title="Security">
+                <span class="profile-sidebar__nav-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M12 3l7 3v5c0 4.5-2.8 7.7-7 10-4.2-2.3-7-5.5-7-10V6l7-3Z" />
+                        <path d="M12 11v4" />
+                        <path d="M12 8h.01" />
+                    </svg>
+                </span>
+                <span class="profile-sidebar__nav-text">
+                    <span>Security</span>
+                    <small>Password and access</small>
+                </span>
+            </button>
+        </nav>
+
+        <div class="profile-sidebar__quick card">
+            <p class="eyebrow">Quick Actions</p>
+            <div class="profile-sidebar__actions">
+                <a class="button compact" href="{% url 'certificate_list' %}">Certificates</a>
+                <a class="button compact secondary" href="{% url 'dashboard' %}">Dashboard</a>
+            </div>
+            <div class="profile-sidebar__mini-stats">
+                <div>
+                    <strong>{{ profile_completion.percent }}%</strong>
+                    <span>Profile ready</span>
+                </div>
+                <div>
+                    <strong>{{ achievement_summary.total_xp }}</strong>
+                    <span>Total XP</span>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <div class="profile-stage">
+        <section class="profile-panel" data-profile-panel="overview" {% if active_profile_panel != "overview" %}hidden{% endif %}>
+            <div class="profile-dashboard-hero profile-dashboard-hero--compact">
+                <article class="profile-overview-card">
+                    <div class="profile-overview-card__glow" aria-hidden="true"></div>
+                    <div class="profile-overview-card__header">
+                        <div class="profile-overview-card__topline">
+                            <p class="eyebrow">User Profile Dashboard</p>
+                            <div class="profile-overview-card__pills">
+                                <span class="profile-role-chip">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                                        <path d="M12 3l2.2 4.6 5 .7-3.6 3.6.9 5.1L12 14.8 7.5 17l.9-5.1L4.8 8.3l5-.7Z" />
+                                    </svg>
+                                    <span>{{ profile_completion.percent }}% ready</span>
+                                </span>
+                                <span class="profile-role-pill profile-role-pill--soft">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                                        <path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z" />
+                                        <path d="M5 20a7 7 0 0 1 14 0" />
+                                    </svg>
+                                    <span>{{ request.user.get_role_display }}</span>
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="profile-overview-card__main">
+                            <div class="profile-avatar">
+                                {% if request.user.profile_picture %}
+                                    <img src="{{ request.user.profile_picture.url }}" alt="{{ request.user.display_name }}">
+                                {% else %}
+                                    <span>{{ request.user.initials }}</span>
+                                {% endif %}
+                            </div>
+                            <div class="profile-overview-card__intro">
+                                <h2 class="profile-overview-card__name">
+                                    {% if request.user.first_name and request.user.last_name %}
+                                        <span>{{ request.user.first_name }}</span>
+                                        <span>{{ request.user.last_name }}</span>
+                                    {% elif request.user.get_full_name %}
+                                        <span>{{ request.user.get_full_name }}</span>
+                                    {% else %}
+                                        <span>{{ request.user.username }}</span>
+                                    {% endif %}
+                                </h2>
+                                <p class="profile-overview-card__headline">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                                        <path d="M3 7h18" />
+                                        <path d="M7 7V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v2" />
+                                        <rect x="3" y="7" width="18" height="13" rx="3" ry="3" />
+                                    </svg>
+                                    <span>{{ request.user.profile_title }}</span>
+                                </p>
+                                <div class="profile-overview-card__meta-list">
+                                    <span class="profile-overview-card__meta-pill">
+                                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                                            <path d="M7 2v4" />
+                                            <path d="M17 2v4" />
+                                            <rect x="3" y="5" width="18" height="16" rx="3" ry="3" />
+                                            <path d="M3 10h18" />
+                                        </svg>
+                                        <span>Joined {{ request.user.date_joined|date:"F Y" }}</span>
+                                    </span>
+                                    {% if request.user.organization %}
+                                        <span class="profile-overview-card__meta-pill">
+                                            <svg viewBox="0 0 24 24" aria-hidden="true">
+                                                <path d="M4 20h16" />
+                                                <path d="M6 20V9l6-5 6 5v11" />
+                                                <path d="M9 20v-4h6v4" />
+                                                <path d="M9 11h.01" />
+                                                <path d="M15 11h.01" />
+                                            </svg>
+                                            <span>{{ request.user.organization }}</span>
+                                        </span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <p class="profile-overview-card__bio">
+                        {% if request.user.bio %}
+                            {{ request.user.bio }}
+                        {% else %}
+                            Add a short bio, profile photo, and certificate details to make your learner profile and certificates feel complete.
+                        {% endif %}
+                    </p>
+
+                    <div class="profile-metric-grid">
+                        {% for metric in profile_metrics %}
+                            <div class="profile-metric-card">
+                                <strong>{{ metric.value }}</strong>
+                                <span>{{ metric.label }}</span>
+                            </div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="profile-readiness-card">
+                        <div class="row-between">
+                            <div>
+                                <p class="eyebrow">Certificate Readiness</p>
+                                <h3>Profile completeness</h3>
+                            </div>
+                            <strong>{{ profile_completion.percent }}%</strong>
+                        </div>
+                        <div class="profile-progress-bar" aria-hidden="true">
+                            <span style="width: {{ profile_completion.percent }}%;"></span>
+                        </div>
+                        <div class="profile-readiness-list">
+                            {% for item in profile_completion.checkpoints %}
+                                <span class="profile-readiness-pill {% if item.complete %}complete{% endif %}">
+                                    {{ item.label }}
+                                </span>
+                            {% endfor %}
+                        </div>
+                        <div class="card-actions">
+                            <a class="button compact" href="{% url 'certificate_list' %}">Open Certificates</a>
+                            <button type="button" class="button compact secondary" data-profile-nav="settings">Edit Profile</button>
+                        </div>
+                    </div>
+                </article>
+
+                <article class="profile-analytics-card">
+                    <div class="section-heading">
+                        <div>
+                            <p class="eyebrow">Learning Analytics</p>
+                            <h2>Competency radar</h2>
+                            <p class="muted">A live snapshot of how your LMS activity translates into mastery, practice, and certification readiness.</p>
+                        </div>
+                        <span class="profile-analytics-score">{{ learning_analytics.average }}%</span>
+                    </div>
+
+                    <div class="profile-analytics-layout">
+                        <div class="profile-radar-shell">
+                            <svg class="profile-radar-chart" viewBox="0 0 340 340" role="img" aria-label="Learning analytics radar chart">
+                                <circle cx="{{ learning_analytics.chart.center_x }}" cy="{{ learning_analytics.chart.center_y }}" r="6" class="profile-radar-center"></circle>
+                                {% for ring in learning_analytics.chart.grid %}
+                                    <polygon points="{{ ring }}" class="profile-radar-grid"></polygon>
+                                {% endfor %}
+                                {% for axis in learning_analytics.chart.axes %}
+                                    <line
+                                        x1="{{ learning_analytics.chart.center_x }}"
+                                        y1="{{ learning_analytics.chart.center_y }}"
+                                        x2="{{ axis.outer_x }}"
+                                        y2="{{ axis.outer_y }}"
+                                        class="profile-radar-axis"
+                                    ></line>
+                                {% endfor %}
+                                <polygon points="{{ learning_analytics.chart.points }}" class="profile-radar-area"></polygon>
+                                <polyline points="{{ learning_analytics.chart.points }}" class="profile-radar-line"></polyline>
+                                {% for axis in learning_analytics.chart.axes %}
+                                    <circle cx="{{ axis.point_x }}" cy="{{ axis.point_y }}" r="5" class="profile-radar-point"></circle>
+                                    <text
+                                        x="{{ axis.label_x }}"
+                                        y="{{ axis.label_y }}"
+                                        text-anchor="{{ axis.label_anchor }}"
+                                        class="profile-radar-label"
+                                    >{{ axis.label }}</text>
+                                {% endfor %}
+                            </svg>
+                        </div>
+
+                        <div class="profile-analytics-list">
+                            {% for axis in learning_analytics.axes %}
+                                <div class="profile-analytics-item">
+                                    <div class="row-between">
+                                        <strong>{{ axis.label }}</strong>
+                                        <span>{{ axis.value }}%</span>
+                                    </div>
+                                    <div class="profile-progress-bar profile-progress-bar--soft" aria-hidden="true">
+                                        <span style="width: {{ axis.value }}%;"></span>
+                                    </div>
+                                    <p>{{ axis.summary }}</p>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </article>
+            </div>
+        </section>
+
+        <section class="profile-panel" data-profile-panel="learning" {% if active_profile_panel != "learning" %}hidden{% endif %}>
+            <div class="profile-panel__header card">
+                <button type="button" class="profile-back-button" data-profile-nav="overview">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M15 6 9 12l6 6" />
+                    </svg>
+                    <span>Back to Overview</span>
+                </button>
+                <div>
+                    <p class="eyebrow">Learning</p>
+                    <h2>Course history and statistics</h2>
+                    <p class="muted">Track what you finished, what is still active, and how your time is adding up.</p>
+                </div>
+            </div>
+
+            <div class="profile-dashboard-grid profile-dashboard-grid--panel">
+                <article class="card profile-history-card">
+                    <div class="section-heading">
+                        <div>
+                            <p class="eyebrow">Learning History</p>
+                            <h2>Courses, duration, and certificate status</h2>
+                        </div>
+                        <span class="profile-stat-chip">{{ history_count }} tracked</span>
+                    </div>
+
+                    <div class="profile-history-list">
+                        {% for row in learning_history %}
+                            <div class="profile-history-row">
+                                <div class="profile-history-row__title">
+                                    <strong>{{ row.course.title }}</strong>
+                                    <span>
+                                        {% if row.completed_at %}
+                                            Completed {{ row.completed_at|date:"M d, Y" }}
+                                        {% else %}
+                                            Still in progress
+                                        {% endif %}
+                                    </span>
+                                </div>
+                                <div class="profile-history-row__meta">
+                                    <span>{{ row.duration }}h</span>
+                                    <span>{{ row.progress_percent }}% progress</span>
+                                    <span class="profile-status-pill {{ row.status_tone }}">{{ row.status_label }}</span>
+                                    {% if row.certificate %}
+                                        <a class="button compact" href="{% url 'certificate_detail' row.certificate.id %}">Certificate</a>
+                                    {% else %}
+                                        <a class="button compact secondary" href="{% url 'course_detail' row.course.slug %}">View Course</a>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        {% empty %}
+                            <div class="profile-empty-state">
+                                <h3>No learning history yet</h3>
+                                <p>Enroll in a course to unlock progress tracking, certificates, and personalized analytics.</p>
+                                <a class="button compact" href="{% url 'course_list' %}">Explore Courses</a>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </article>
+
+                <article class="card profile-statistics-card">
+                    <div class="section-heading">
+                        <div>
+                            <p class="eyebrow">Learning Statistics</p>
+                            <h2>Study totals at a glance</h2>
+                        </div>
+                    </div>
+                    <div class="profile-statistics-list">
+                        {% for stat in learning_statistics %}
+                            <div class="profile-statistics-item">
+                                <strong>{{ stat.value }}</strong>
+                                <span>{{ stat.label }}</span>
+                            </div>
+                        {% endfor %}
+                    </div>
+                    {% if latest_certificate %}
+                        <div class="profile-certificate-callout">
+                            <p class="eyebrow">Latest Certificate</p>
+                            <strong>{{ latest_certificate.course.title }}</strong>
+                            <p>Profile updates sync with this certificate automatically.</p>
+                            <a class="button compact" href="{% url 'certificate_detail' latest_certificate.id %}">Preview Credential</a>
+                        </div>
+                    {% endif %}
+                </article>
+            </div>
+        </section>
+
+        <section class="profile-panel" data-profile-panel="achievements" {% if active_profile_panel != "achievements" %}hidden{% endif %}>
+            <div class="profile-panel__header card">
+                <button type="button" class="profile-back-button" data-profile-nav="overview">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M15 6 9 12l6 6" />
+                    </svg>
+                    <span>Back to Overview</span>
+                </button>
+                <div>
+                    <p class="eyebrow">Achievements</p>
+                    <h2>Badges, milestones, and reward momentum</h2>
+                    <p class="muted">All reward-related progress stays here so the main overview remains short and clear.</p>
+                </div>
+            </div>
+
+            {% include "badges/_level_panel.html" with summary=achievement_summary featured_badge=featured_platform_badge %}
+
+            <div class="profile-panel__toolbar">
+                <a class="button compact secondary" href="{% url 'badge_list' %}">Open Badge Hub</a>
+            </div>
+
+            <section class="profile-achievement-grid">
+                {% for item in achievement_cards %}
+                    <article class="profile-achievement-card" style="{{ item.theme_style }}">
+                        <div class="profile-achievement-card__head">
+                            <span class="profile-achievement-card__glyph">{{ item.glyph }}</span>
+                            <div>
+                                <p class="eyebrow">{{ item.accent_label }}</p>
+                                <h3>{{ item.badge.name }}</h3>
+                            </div>
+                            <span class="profile-status-pill {{ item.status }}">{{ item.status_label }}</span>
+                        </div>
+                        <p class="profile-achievement-card__copy">{{ item.helper_text }}</p>
+                        <div class="profile-progress-bar profile-progress-bar--achievement" aria-hidden="true">
+                            <span style="width: {{ item.progress_percent }}%;"></span>
+                        </div>
+                        <div class="profile-achievement-card__meta">
+                            <span>{{ item.progress_text }}</span>
+                            <span>+{{ item.xp_reward }} XP</span>
+                        </div>
+                    </article>
+                {% empty %}
+                    <article class="card profile-empty-state">
+                        <h3>No achievements yet</h3>
+                        <p>Start a course to unlock your first rewards and see badge progress here.</p>
+                    </article>
+                {% endfor %}
+            </section>
+
+            {% if recent_badges %}
+                <section class="card profile-recent-badges">
+                    <div class="section-heading">
+                        <div>
+                            <p class="eyebrow">Recent Rewards</p>
+                            <h2>Latest earned badges</h2>
+                        </div>
+                    </div>
+                    <div class="profile-reward-list">
+                        {% for award in recent_badges %}
+                            <div class="profile-reward-pill">
+                                <strong>{{ award.badge.name }}</strong>
+                                <span>+{{ award.badge.xp_reward }} XP{% if award.course %} | {{ award.course.title }}{% endif %}</span>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </section>
+            {% endif %}
+        </section>
+
+        <section class="profile-panel" data-profile-panel="settings" {% if active_profile_panel != "settings" %}hidden{% endif %}>
+            <div class="profile-panel__header card">
+                <button type="button" class="profile-back-button" data-profile-nav="overview">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M15 6 9 12l6 6" />
+                    </svg>
+                    <span>Back to Overview</span>
+                </button>
+                <div>
+                    <p class="eyebrow">Edit Profile</p>
+                    <h2>Manage personal information and certificate details</h2>
+                    <p class="muted">Update the details that appear in your dashboard and certificate-ready profile.</p>
+                </div>
+            </div>
+
+            <article class="card profile-settings-card">
+                <form method="post" enctype="multipart/form-data" class="profile-settings-form">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="profile">
+
+                    <div class="profile-upload-panel">
+                        <div class="profile-avatar profile-avatar--large">
+                            {% if request.user.profile_picture %}
+                                <img src="{{ request.user.profile_picture.url }}" alt="{{ request.user.display_name }}">
+                            {% else %}
+                                <span>{{ request.user.initials }}</span>
+                            {% endif %}
+                        </div>
+                        <div class="profile-upload-panel__body">
+                            <label for="{{ profile_form.profile_picture.id_for_label }}">{{ profile_form.profile_picture.label }}</label>
+                            {{ profile_form.profile_picture }}
+                            {% if profile_form.profile_picture.help_text %}
+                                <small>{{ profile_form.profile_picture.help_text }}</small>
+                            {% endif %}
+                            {% for error in profile_form.profile_picture.errors %}
+                                <p class="error-text">{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <div class="profile-form-grid">
+                        <div class="profile-form-field">
+                            <label for="{{ profile_form.first_name.id_for_label }}">First name</label>
+                            {{ profile_form.first_name }}
+                            {% for error in profile_form.first_name.errors %}<p class="error-text">{{ error }}</p>{% endfor %}
+                        </div>
+                        <div class="profile-form-field">
+                            <label for="{{ profile_form.last_name.id_for_label }}">Last name</label>
+                            {{ profile_form.last_name }}
+                            {% for error in profile_form.last_name.errors %}<p class="error-text">{{ error }}</p>{% endfor %}
+                        </div>
+                        <div class="profile-form-field">
+                            <label for="{{ profile_form.title.id_for_label }}">{{ profile_form.title.label }}</label>
+                            {{ profile_form.title }}
+                            {% for error in profile_form.title.errors %}<p class="error-text">{{ error }}</p>{% endfor %}
+                        </div>
+                        <div class="profile-form-field">
+                            <label for="{{ profile_form.organization.id_for_label }}">{{ profile_form.organization.label }}</label>
+                            {{ profile_form.organization }}
+                            {% if profile_form.organization.help_text %}<small>{{ profile_form.organization.help_text }}</small>{% endif %}
+                            {% for error in profile_form.organization.errors %}<p class="error-text">{{ error }}</p>{% endfor %}
+                        </div>
+                        <div class="profile-form-field">
+                            <label for="{{ profile_form.email.id_for_label }}">Email</label>
+                            {{ profile_form.email }}
+                            {% for error in profile_form.email.errors %}<p class="error-text">{{ error }}</p>{% endfor %}
+                        </div>
+                        <div class="profile-form-field">
+                            <label for="{{ profile_form.phone_number.id_for_label }}">{{ profile_form.phone_number.label }}</label>
+                            {{ profile_form.phone_number }}
+                            {% for error in profile_form.phone_number.errors %}<p class="error-text">{{ error }}</p>{% endfor %}
+                        </div>
+                        <div class="profile-form-field profile-form-field--full">
+                            <label for="{{ profile_form.certificate_name.id_for_label }}">{{ profile_form.certificate_name.label }}</label>
+                            {{ profile_form.certificate_name }}
+                            {% if profile_form.certificate_name.help_text %}<small>{{ profile_form.certificate_name.help_text }}</small>{% endif %}
+                            {% for error in profile_form.certificate_name.errors %}<p class="error-text">{{ error }}</p>{% endfor %}
+                        </div>
+                        <div class="profile-form-field profile-form-field--full">
+                            <label for="{{ profile_form.bio.id_for_label }}">{{ profile_form.bio.label }}</label>
+                            {{ profile_form.bio }}
+                            {% for error in profile_form.bio.errors %}<p class="error-text">{{ error }}</p>{% endfor %}
+                        </div>
+                    </div>
+
+                    {% for error in profile_form.non_field_errors %}
+                        <p class="error-text">{{ error }}</p>
+                    {% endfor %}
+
+                    <div class="card-actions">
+                        <button type="submit" class="button">Save Profile Changes</button>
+                    </div>
+                </form>
+            </article>
+        </section>
+
+        <section class="profile-panel" data-profile-panel="security" {% if active_profile_panel != "security" %}hidden{% endif %}>
+            <div class="profile-panel__header card">
+                <button type="button" class="profile-back-button" data-profile-nav="overview">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M15 6 9 12l6 6" />
+                    </svg>
+                    <span>Back to Overview</span>
+                </button>
+                <div>
+                    <p class="eyebrow">Security</p>
+                    <h2>Authentication, password, and certificate sync</h2>
+                    <p class="muted">Manage login access and the profile details used when your certificates refresh.</p>
+                </div>
+            </div>
+
+            <div class="profile-security-grid">
+                <article class="card profile-security-card">
+                    <div class="section-heading">
+                        <div>
+                            <p class="eyebrow">Authentication Providers</p>
+                            <h2>Available sign-in methods</h2>
+                        </div>
+                    </div>
+
+                    <div class="stack-list profile-provider-list">
+                        <div class="stack-item">
+                            <strong>Primary sign-in</strong>
+                            <span>{{ request.user.get_auth_provider_display }}</span>
+                        </div>
+                        {% for key, provider in social_providers.items %}
+                            <div class="stack-item">
+                                <strong>{{ provider.label }}</strong>
+                                <span>{% if provider.enabled %}Available{% else %}Not configured{% endif %}</span>
+                            </div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="profile-security-note">
+                        <p class="eyebrow">Certificate Integration</p>
+                        <h3>Profile updates sync with certificates</h3>
+                        <p>Your updated name, email, title, and organization are used when certificate previews and PDFs are refreshed.</p>
+                    </div>
+                </article>
+
+                <article class="card profile-security-card">
+                    <div class="section-heading">
+                        <div>
+                            <p class="eyebrow">Password</p>
+                            <h2>Change your password</h2>
+                        </div>
+                    </div>
+
+                    <form method="post" class="profile-password-form">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="password">
+                        {% for field in password_form %}
+                            <div class="profile-form-field">
+                                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                                {{ field }}
+                                {% if field.help_text %}<div class="profile-field-help">{{ field.help_text|safe }}</div>{% endif %}
+                                {% for error in field.errors %}<p class="error-text">{{ error }}</p>{% endfor %}
+                            </div>
+                        {% endfor %}
+                        {% for error in password_form.non_field_errors %}
+                            <p class="error-text">{{ error }}</p>
+                        {% endfor %}
+                        <div class="card-actions">
+                            <button type="submit" class="button secondary">Change Password</button>
+                        </div>
+                    </form>
+                </article>
+            </div>
+        </section>
+    </div>
 </section>
 {% endblock %}

@@ -1,6 +1,7 @@
 import re
 
 from courses.activity_results import ActivityEvaluationResult, ERROR_MESSAGE, SUCCESS_MESSAGE
+from courses.activity_config import get_effective_activity_rules, uses_effective_code_runner
 from courses.code_runner.validation import validate_code_activity_submission
 
 
@@ -17,8 +18,8 @@ def _describe_missing(rule):
 
 
 def validate_activity_submission(lesson, response):
-    rules = lesson.activity_validation_rules or {}
-    if lesson.uses_code_runner or rules.get("validator") == "code_runner":
+    rules = get_effective_activity_rules(lesson)
+    if uses_effective_code_runner(lesson) or rules.get("validator") == "code_runner":
         return validate_code_activity_submission(lesson, response)
 
     submission = (response or "").strip()

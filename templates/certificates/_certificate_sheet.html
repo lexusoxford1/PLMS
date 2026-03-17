@@ -1,0 +1,198 @@
+<div class="certificate-sheet" style="{{ presentation.theme_style }}">
+    <div class="certificate-sheet__frame" aria-hidden="true"></div>
+    <div class="certificate-sheet__wash certificate-sheet__wash--primary"></div>
+    <div class="certificate-sheet__wash certificate-sheet__wash--accent"></div>
+    <div class="certificate-sheet__pattern certificate-sheet__pattern--header" aria-hidden="true"></div>
+    <div class="certificate-sheet__pattern certificate-sheet__pattern--body" aria-hidden="true"></div>
+
+    <div class="certificate-sheet__header">
+        <div class="certificate-branding">
+            <span class="certificate-branding__mark">{{ presentation.course_monogram }}</span>
+            <div>
+                <strong>{{ presentation.brand_name }}</strong>
+                <span>{{ presentation.brand_subtitle }}</span>
+            </div>
+        </div>
+        <div class="certificate-sheet__header-meta">
+            <span class="certificate-track-pill">{{ presentation.course_track }}</span>
+            <span class="certificate-sheet__status-chip">
+                {% if presentation.is_preview %}
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M8 11V8a4 4 0 1 1 8 0v3" />
+                        <rect x="5" y="11" width="14" height="9" rx="2" ry="2" />
+                        <path d="M12 15v2" />
+                    </svg>
+                    <span>Identity locked</span>
+                {% else %}
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M12 3l7 3v5c0 4.5-2.8 7.7-7 10-4.2-2.3-7-5.5-7-10V6l7-3Z" />
+                        <path d="m9.5 12.5 1.8 1.8 3.7-4.1" />
+                    </svg>
+                    <span>Verified credential</span>
+                {% endif %}
+            </span>
+        </div>
+    </div>
+
+    <div class="certificate-sheet__hero">
+        <div class="certificate-sheet__hero-panel">
+            <p class="certificate-sheet__eyebrow">{{ presentation.completion_label }}</p>
+            <div class="certificate-sheet__divider" aria-hidden="true">
+                <svg viewBox="0 0 24 24">
+                    <path d="m12 3 2.4 4.9 5.4.8-3.9 3.8.9 5.4L12 15.3 7.2 18l.9-5.4-3.9-3.8 5.4-.8L12 3Z" />
+                </svg>
+            </div>
+            <p class="certificate-sheet__lead">This certifies that</p>
+            {% if presentation.show_identity %}
+                <h2 class="certificate-sheet__name">{{ presentation.learner_name }}</h2>
+                {% if presentation.show_identity_line %}
+                    <p class="certificate-sheet__identity">{{ presentation.learner_identity_line }}</p>
+                {% endif %}
+            {% else %}
+                <div class="certificate-sheet__name certificate-sheet__name--placeholder" aria-hidden="true">
+                    <span class="certificate-placeholder certificate-placeholder--name"></span>
+                </div>
+                <p class="certificate-sheet__preview-line">
+                    <span class="certificate-sheet__preview-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M8 11V8a4 4 0 1 1 8 0v3" />
+                            <rect x="5" y="11" width="14" height="9" rx="2" ry="2" />
+                            <path d="M12 15v2" />
+                        </svg>
+                    </span>
+                    <span>{{ presentation.identity_placeholder }}</span>
+                </p>
+                <p class="certificate-sheet__identity certificate-sheet__identity--placeholder">
+                    {{ presentation.identity_line_placeholder }}
+                </p>
+            {% endif %}
+            <p class="certificate-sheet__copy">has successfully completed</p>
+            <p class="certificate-sheet__course">{{ presentation.course_title }}</p>
+        </div>
+    </div>
+
+    <div class="certificate-sheet__facts">
+        <div class="certificate-fact">
+            <span class="certificate-fact__icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24">
+                    <path d="M7 2v4" />
+                    <path d="M17 2v4" />
+                    <rect x="3" y="5" width="18" height="16" rx="3" ry="3" />
+                    <path d="M3 10h18" />
+                </svg>
+            </span>
+            <div class="certificate-fact__body">
+                <span>Completed On</span>
+                <strong>
+                    {% if presentation.issued_date %}
+                        {{ presentation.issued_date }}
+                    {% else %}
+                        {{ presentation.issued_placeholder }}
+                    {% endif %}
+                </strong>
+            </div>
+        </div>
+        <div class="certificate-fact">
+            <span class="certificate-fact__icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24">
+                    <path d="M7 7h10" />
+                    <path d="M7 12h6" />
+                    <path d="M7 17h8" />
+                    <rect x="3" y="4" width="18" height="16" rx="3" ry="3" />
+                </svg>
+            </span>
+            <div class="certificate-fact__body">
+                <span>Certificate ID</span>
+                <strong>
+                    {% if presentation.show_certificate_number %}
+                        {{ presentation.certificate_number }}
+                    {% else %}
+                        {{ presentation.serial_placeholder }}
+                    {% endif %}
+                </strong>
+            </div>
+        </div>
+        <div class="certificate-fact">
+            <span class="certificate-fact__icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24">
+                    <path d="M4 7h16" />
+                    <path d="M5 7 12 13l7-6" />
+                    <rect x="3" y="5" width="18" height="14" rx="3" ry="3" />
+                </svg>
+            </span>
+            <div class="certificate-fact__body">
+                <span>{{ presentation.profile_fact_label }}</span>
+                <strong>
+                    {% if presentation.show_profile_fact %}
+                        {{ presentation.profile_fact_value }}
+                    {% else %}
+                        {{ presentation.profile_fact_placeholder }}
+                    {% endif %}
+                </strong>
+            </div>
+        </div>
+    </div>
+
+    {% if presentation.badge_name %}
+        <p class="certificate-sheet__badge">
+            <span class="certificate-sheet__badge-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24">
+                    <circle cx="12" cy="8.5" r="4.5" />
+                    <path d="m9 13 1.2 7 1.8-1.8 1.8 1.8 1.2-7" />
+                </svg>
+            </span>
+            <span>Awarded with the <strong>{{ presentation.badge_name }}</strong> completion badge.</span>
+        </p>
+    {% elif presentation.preview_notice %}
+        <p class="certificate-sheet__badge certificate-sheet__badge--preview">
+            <span class="certificate-sheet__badge-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24">
+                    <circle cx="12" cy="12" r="9" />
+                    <path d="M12 8h.01" />
+                    <path d="M11 12h1v4h1" />
+                </svg>
+            </span>
+            <span>{{ presentation.preview_notice }}</span>
+        </p>
+    {% endif %}
+
+    <div class="certificate-sheet__footer">
+        <div class="certificate-signature-block">
+            <p class="certificate-signature-block__label">Authorized Signature</p>
+            <svg class="certificate-signature-block__art" viewBox="0 0 220 70" aria-hidden="true">
+                <path d="M8 42 C20 16, 32 50, 44 34 S70 18, 86 36 S114 16, 130 34 S156 52, 174 30 S196 20, 212 36" />
+                <path d="M18 56 H200" />
+            </svg>
+            <strong>{{ presentation.signatory_name }}</strong>
+            <span>{{ presentation.signatory_title }}</span>
+        </div>
+
+        <div class="certificate-seal">
+            <span class="certificate-seal__ring"></span>
+            <span class="certificate-seal__inner"></span>
+            <svg class="certificate-seal__spark" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="m12 3 2.4 4.9 5.4.8-3.9 3.8.9 5.4L12 15.3 7.2 18l.9-5.4-3.9-3.8 5.4-.8L12 3Z" />
+            </svg>
+            <strong>{% if presentation.is_preview %}Preview{% else %}Verified{% endif %}</strong>
+            <span class="certificate-seal__label">{% if presentation.is_preview %}Default Design{% else %}PLMS Record{% endif %}</span>
+        </div>
+    </div>
+
+    <p class="certificate-sheet__verification">
+        <span class="certificate-sheet__verification-icon" aria-hidden="true">
+            {% if presentation.is_preview %}
+                <svg viewBox="0 0 24 24">
+                    <path d="M8 11V8a4 4 0 1 1 8 0v3" />
+                    <rect x="5" y="11" width="14" height="9" rx="2" ry="2" />
+                    <path d="M12 15v2" />
+                </svg>
+            {% else %}
+                <svg viewBox="0 0 24 24">
+                    <path d="M12 3l7 3v5c0 4.5-2.8 7.7-7 10-4.2-2.3-7-5.5-7-10V6l7-3Z" />
+                    <path d="m9.5 12.5 1.8 1.8 3.7-4.1" />
+                </svg>
+            {% endif %}
+        </span>
+        <span>{{ presentation.verification_copy }}</span>
+    </p>
+</div>

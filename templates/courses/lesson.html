@@ -54,50 +54,60 @@
 </section>
 
 {% if lesson.has_activity %}
-    {% if lesson.uses_code_runner %}
-        {% if lesson.activity_language == "csharp" %}
-            <section class="csharp-workspace-shell" data-code-runner-shell>
+    {% if runner_ui.uses_code_runner %}
+        {% if runner_ui.use_dedicated_workspace %}
+            <section
+                class="csharp-workspace-shell"
+                data-code-runner-shell
+                data-default-notification-title="{{ runner_ui.default_notification_title }}"
+                data-default-notification-message="{{ runner_ui.default_notification_message }}"
+                data-default-notification-label="{{ runner_ui.default_notification_label }}"
+                data-default-error-title="{{ runner_ui.default_error_title }}"
+                data-environment-error-title="{{ runner_ui.environment_error_title }}"
+                data-detail-caption="{{ runner_ui.detail_caption }}"
+                data-environment-detail-caption="{{ runner_ui.environment_detail_caption }}"
+                data-runner-file-name="{{ runner_ui.file_name }}"
+            >
                 <div class="csharp-workspace-banner">
                     <div>
-                        <p class="eyebrow">Dedicated C# Compiler</p>
-                        <h2>{{ lesson.activity_title|default:"C# Compiler Lab" }}</h2>
+                        <p class="eyebrow">{{ runner_ui.headline }}</p>
+                        <h2>{{ runner_ui.workspace_title }}</h2>
                         <p>
-                            Work through the task in one place, then compile safely with the lesson runner. You will
-                            see friendly guidance, exact compiler feedback, and your program output below the editor.
+                            {{ runner_ui.workspace_body }}
                         </p>
                     </div>
                     <div class="csharp-quick-stats">
                         <div class="csharp-stat-card">
                             <span class="csharp-stat-label">File</span>
-                            <strong>Program.cs</strong>
+                            <strong>{{ runner_ui.file_name }}</strong>
                         </div>
                         <div class="csharp-stat-card">
-                            <span class="csharp-stat-label">Compiler</span>
-                            <strong>.NET / C#</strong>
+                            <span class="csharp-stat-label">Environment</span>
+                            <strong>{{ runner_ui.tool_label }}</strong>
                         </div>
                         <div class="csharp-stat-card">
                             <span class="csharp-stat-label">Feedback</span>
-                            <strong>Backend popup</strong>
+                            <strong>{{ runner_ui.feedback_label }}</strong>
                         </div>
                     </div>
                 </div>
 
-                <nav class="csharp-mobile-nav" aria-label="C# compiler sections">
-                    <a href="#csharp-instructions">Instructions</a>
-                    <a href="#csharp-editor">Compiler</a>
-                    <a href="#csharp-results">Results</a>
+                <nav class="csharp-mobile-nav" aria-label="{{ runner_ui.language_label }} code runner sections">
+                    <a href="#runner-instructions">Instructions</a>
+                    <a href="#runner-editor">{{ runner_ui.submit_idle_label }}</a>
+                    <a href="#runner-results">Results</a>
                 </nav>
 
-                {% if lesson.activity_validation_rules.starter_code %}
-                    {{ lesson.activity_validation_rules.starter_code|json_script:"csharp-starter-code" }}
+                {% if activity_rules.starter_code %}
+                    {{ activity_rules.starter_code|json_script:runner_ui.starter_code_id }}
                 {% endif %}
 
                 <section class="csharp-workspace">
                 <aside class="csharp-sidebar">
-                    <article class="card csharp-side-card" id="csharp-instructions">
+                    <article class="card csharp-side-card" id="runner-instructions">
                         <div class="csharp-side-header">
                             <h2>Instructions</h2>
-                            <span class="badge-tag">C# lesson</span>
+                            <span class="badge-tag">{{ runner_ui.lesson_badge }}</span>
                         </div>
                         <div class="content-block rich-content">{{ lesson.activity_instructions|safe }}</div>
                     </article>
@@ -108,36 +118,36 @@
                             <span class="badge-tag">3 steps</span>
                         </div>
                         <ol class="csharp-guide-list">
-                            <li>Read the task and keep your solution inside <code>Main()</code>.</li>
-                            <li>Compile after small changes so errors are easier to fix.</li>
-                            <li>Use the results panel to check compiler notes, output, and hints.</li>
+                            {% for step in runner_ui.quick_start_steps %}
+                                <li>{{ step }}</li>
+                            {% endfor %}
                         </ol>
                         <div class="csharp-note-chip-row">
-                            <span class="csharp-note-chip">Program.cs is the active file</span>
-                            <span class="csharp-note-chip">Balanced braces matter</span>
-                            <span class="csharp-note-chip">Run often, fix one issue at a time</span>
+                            {% for note in runner_ui.note_chips %}
+                                <span class="csharp-note-chip">{{ note }}</span>
+                            {% endfor %}
                         </div>
                     </article>
 
                     <details class="card csharp-side-card csharp-hint-card" {% if progress.activity_result_data.hint or lesson.activity_hint %}open{% endif %}>
                         <summary>Stuck? Get a hint</summary>
-                        <p>{{ progress.activity_result_data.hint|default:lesson.activity_hint|default:"Compile the code and read the backend compiler feedback carefully." }}</p>
+                        <p>{{ progress.activity_result_data.hint|default:lesson.activity_hint|default:runner_ui.hint_default }}</p>
                     </details>
 
-                    {% if lesson.activity_validation_rules.starter_code %}
+                    {% if activity_rules.starter_code %}
                         <article class="card csharp-side-card csharp-starter-card">
                             <div class="csharp-side-header">
                                 <h2>Starter Code</h2>
                                 <span class="badge-tag">Safe reset</span>
                             </div>
                             <p class="muted">Need a clean copy? Restore the original lesson code anytime.</p>
-                            <pre class="csharp-starter-preview"><code>{{ lesson.activity_validation_rules.starter_code }}</code></pre>
+                            <pre class="csharp-starter-preview"><code>{{ activity_rules.starter_code }}</code></pre>
                             {% if not progress.activity_completed %}
                                 <button
                                     type="button"
                                     class="button secondary compact"
                                     data-runner-reset
-                                    data-starter-code-id="csharp-starter-code"
+                                    data-starter-code-id="{{ runner_ui.starter_code_id }}"
                                 >
                                     Reset Editor
                                 </button>
@@ -156,11 +166,26 @@
                     {% endif %}
                 </aside>
 
-                <section class="csharp-ide" data-csharp-compiler-shell id="csharp-editor">
+                <section class="csharp-ide" data-csharp-compiler-shell data-dedicated-runner-shell id="runner-editor">
                     <div class="csharp-ide-header">
-                        <div class="csharp-tabs" aria-hidden="true">
-                            <span class="csharp-tab active">Program.cs</span>
-                            <span class="csharp-tab">Compiler</span>
+                        <div class="csharp-tabs" aria-label="{{ runner_ui.language_label }} workspace tools">
+                            <span class="csharp-tab active">{{ runner_ui.file_name }}</span>
+                            <button
+                                type="submit"
+                                class="csharp-tab csharp-tab-action"
+                                data-runner-submit
+                                form="runner-form-{{ lesson.id }}"
+                                data-idle-label="{{ runner_ui.submit_idle_label }}"
+                                data-busy-label="{{ runner_ui.submit_busy_label }}"
+                                aria-controls="runner-results"
+                                {% if progress.activity_completed %}disabled{% endif %}
+                            >
+                                {% if progress.activity_completed %}
+                                    Activity Validated
+                                {% else %}
+                                    {{ runner_ui.submit_idle_label }}
+                                {% endif %}
+                            </button>
                         </div>
                         <div class="csharp-ide-status">
                             <span class="badge-tag">Responsive workspace</span>
@@ -170,8 +195,12 @@
                             >
                                 {% if progress.activity_completed %}
                                     Validated
+                                {% elif progress.activity_result_data.details.environment_issue %}
+                                    Setup issue
+                                {% elif progress.activity_result_data.notification.kind == runner_ui.runtime_error_kind or progress.activity_result_data.timed_out %}
+                                    Runtime error
                                 {% elif progress.activity_result_data.errors %}
-                                    Compiler error
+                                {% if runner_ui.language == "csharp" %}Compiler error{% else %}Error{% endif %}
                                 {% elif progress.activity_feedback_title %}
                                     Needs changes
                                 {% else %}
@@ -184,6 +213,7 @@
                     <form
                         method="post"
                         action="{% url 'submit_activity' course.slug lesson.slug %}"
+                        id="runner-form-{{ lesson.id }}"
                         class="stack-form code-runner-form csharp-compiler-form"
                         data-code-runner-form
                         data-api-url="{% url 'api_submit_lesson_activity' course.slug lesson.slug %}"
@@ -197,15 +227,34 @@
                         {% endif %}
 
                         <div class="csharp-editor-hints">
-                            <span>Tip: keep `Main()` as your entry point.</span>
-                            <span>Compiler notifications below come from the backend service.</span>
+                            <span>{{ runner_ui.editor_tip_primary }}</span>
+                            <span>{{ runner_ui.editor_tip_secondary }}</span>
                         </div>
 
-                        <section class="csharp-results-zone" id="csharp-results" data-runner-results aria-live="polite" aria-atomic="true">
+                        <div class="csharp-action-bar">
+                            <div class="csharp-action-buttons">
+                                {% if activity_rules.starter_code and not progress.activity_completed %}
+                                    <button
+                                        type="button"
+                                        class="button secondary"
+                                        data-runner-reset
+                                        data-starter-code-id="{{ runner_ui.starter_code_id }}"
+                                    >
+                                        Reset Editor
+                                    </button>
+                                {% endif %}
+                            </div>
+                            <div class="csharp-action-meta">
+                                <span class="muted" data-runner-attempts>Attempts: {{ progress.activity_attempts|default:0 }}</span>
+                                <span class="muted">{{ runner_ui.action_meta }}</span>
+                            </div>
+                        </div>
+
+                        <section class="csharp-results-zone" id="runner-results" data-runner-results aria-live="polite" aria-atomic="true">
                         <div class="csharp-results-overview">
                             <div>
                                 <p class="eyebrow">Results</p>
-                                <h3>Compiler Feedback</h3>
+                                <h3>{{ runner_ui.results_heading }}</h3>
                             </div>
                             <div class="csharp-results-tags">
                                 <span class="csharp-status-pill neutral">Backend checked</span>
@@ -235,21 +284,21 @@
                         >
                             <div class="compiler-notification-head">
                                 <strong data-system-notification-title>
-                                    {{ progress.activity_result_data.notification.title|default:"C# compiler feedback will appear here." }}
+                                    {{ progress.activity_result_data.notification.title|default:progress.activity_feedback_title|default:runner_ui.default_notification_title }}
                                 </strong>
                                 <span
                                     class="csharp-kind-pill {% if progress.activity_completed %}success{% elif progress.activity_result_data.notification.level == 'error' or progress.activity_result_data.errors %}error{% elif progress.activity_feedback_title %}warning{% else %}neutral{% endif %}"
                                     data-system-notification-kind
                                 >
-                                    {{ progress.activity_result_data.notification.label|default:"Compiler feedback" }}
+                                    {{ progress.activity_result_data.notification.label|default:runner_ui.default_notification_label }}
                                 </span>
                             </div>
                             <p data-system-notification-message>
-                                {{ progress.activity_result_data.notification.message|default:"Use Run to compile the current C# program. The backend compiler service will generate the notification you see here." }}
+                                {{ progress.activity_result_data.notification.message|default:progress.activity_feedback_body|default:runner_ui.default_notification_message }}
                             </p>
                             <p class="muted" data-system-notification-meta>
                                 {% if progress.activity_result_data.notification.location.line %}
-                                    {{ progress.activity_result_data.notification.location.file|default:"Program.cs" }}
+                                    {{ progress.activity_result_data.notification.location.file|default:runner_ui.file_name }}
                                     line {{ progress.activity_result_data.notification.location.line }},
                                     column {{ progress.activity_result_data.notification.location.column }}
                                 {% elif progress.activity_result_data.details.environment_issue %}
@@ -267,7 +316,7 @@
                         >
                             <div class="code-output-header">
                                 <h3>Raw Backend Details</h3>
-                                <span class="muted" data-system-detail-caption>Compiler service output</span>
+                                <span class="muted" data-system-detail-caption>{{ runner_ui.detail_caption }}</span>
                             </div>
                             <pre class="code-console code-console-wrap"><code data-system-detail>{{ progress.activity_result_data.notification.detail }}</code></pre>
                         </div>
@@ -288,12 +337,12 @@
                             <div class="code-output-card danger" {% if not progress.activity_result_data.errors %}hidden{% endif %} data-runner-error-card>
                                 <div class="code-output-header">
                                     <h3 data-runner-error-title>
-                                        {% if progress.activity_result_data.notification.kind == "csharp_runtime_error" %}
+                                        {% if progress.activity_result_data.notification.kind == runner_ui.runtime_error_kind or progress.activity_result_data.timed_out %}
                                             Runtime Error Details
                                         {% elif progress.activity_result_data.details.environment_issue %}
-                                            Compiler Environment Details
+                                            {{ runner_ui.environment_error_title }}
                                         {% else %}
-                                            Compiler Details
+                                            {{ runner_ui.default_error_title }}
                                         {% endif %}
                                     </h3>
                                 </div>
@@ -326,47 +375,6 @@
                             </article>
                         {% endif %}
                         </section>
-
-                        <div class="csharp-action-bar">
-                            <div class="csharp-action-buttons">
-                                <button
-                                    type="submit"
-                                    class="button"
-                                    data-runner-submit
-                                    data-idle-label="Compile and Run"
-                                    data-busy-label="Compiling..."
-                                    {% if progress.activity_completed %}disabled{% endif %}
-                                >
-                                    {% if progress.activity_completed %}
-                                        Activity Validated
-                                    {% else %}
-                                        Compile and Run
-                                    {% endif %}
-                                </button>
-                                {% if lesson.activity_validation_rules.starter_code and not progress.activity_completed %}
-                                    <button
-                                        type="button"
-                                        class="button secondary"
-                                        data-runner-reset
-                                        data-starter-code-id="csharp-starter-code"
-                                    >
-                                        Reset Editor
-                                    </button>
-                                {% endif %}
-                                <button
-                                    type="button"
-                                    class="button ghost"
-                                    data-runner-view-results
-                                    aria-controls="csharp-results"
-                                >
-                                    View Results
-                                </button>
-                            </div>
-                            <div class="csharp-action-meta">
-                                <span class="muted" data-runner-attempts>Attempts: {{ progress.activity_attempts|default:0 }}</span>
-                                <span class="muted">Backend-driven compiler notification</span>
-                            </div>
-                        </div>
                     </form>
                 </section>
                 </section>
@@ -377,11 +385,11 @@
                     <div>
                         <h2>{{ lesson.activity_title|default:"Activity" }}</h2>
                         <p class="muted">
-                            Secure {{ lesson.activity_language|upper }} compiler / runtime environment with validation feedback.
+                            Secure {{ runner_ui.language_label|upper }} compiler / runtime environment with validation feedback.
                         </p>
                     </div>
                     <div class="code-lab-badges">
-                        <span class="badge-tag">{{ lesson.activity_language|upper }}</span>
+                        <span class="badge-tag">{{ runner_ui.language_label|upper }}</span>
                         <span class="badge-tag">Sandboxed</span>
                     </div>
                 </div>
@@ -392,9 +400,9 @@
                     <div class="code-editor-panel">
                         <div class="code-editor-toolbar">
                             <span class="code-file">
-                                {% if lesson.activity_language == "python" %}
+                                {% if runner_ui.language == "python" %}
                                     main.py
-                                {% elif lesson.activity_language == "php" %}
+                                {% elif runner_ui.language == "php" %}
                                     main.php
                                 {% else %}
                                     main.txt
@@ -441,14 +449,14 @@
                                     type="submit"
                                     class="button"
                                     data-runner-submit
-                                    data-idle-label="Run and Check Code"
-                                    data-busy-label="Running..."
+                                    data-idle-label="{{ runner_ui.submit_idle_label }}"
+                                    data-busy-label="{{ runner_ui.submit_busy_label }}"
                                     {% if progress.activity_completed %}disabled{% endif %}
                                 >
                                     {% if progress.activity_completed %}
                                         Activity Validated
                                     {% else %}
-                                        Run and Check Code
+                                        {{ runner_ui.submit_idle_label }}
                                     {% endif %}
                                 </button>
                                 <span class="muted" data-runner-attempts>

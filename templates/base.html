@@ -14,6 +14,9 @@
             <nav class="site-nav">
                 <a href="{% url 'course_list' %}">Courses</a>
                 {% if request.user.is_authenticated %}
+                    {% if user_achievement_summary %}
+                        <span class="nav-level-pill">Lv {{ user_achievement_summary.level }} - {{ user_achievement_summary.total_xp }} XP</span>
+                    {% endif %}
                     <a href="{% url 'dashboard' %}">Dashboard</a>
                     <a href="{% url 'badge_list' %}">Badges</a>
                     <a href="{% url 'certificate_list' %}">Certificates</a>
@@ -46,9 +49,11 @@
         {% endif %}
     </section>
 
-    <main class="container page-shell">
+    <main class="container page-shell {% block page_shell_class %}{% endblock %}">
         {% block content %}{% endblock %}
     </main>
+
+    {% include "badges/_badge_unlock_modal.html" %}
 
     <script src="{% static 'js/main.js' %}"></script>
 </body>

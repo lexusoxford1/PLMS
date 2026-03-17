@@ -5,6 +5,7 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
 
 from LMS.utils import can_access_lesson, get_or_create_lesson_progress
+from certificates.models import Certificate
 
 from .forms import QuizSubmissionForm
 from .models import Question, Quiz, QuizAttempt
@@ -64,9 +65,13 @@ def quiz_detail(request, quiz_id):
                 submitted_answers=submitted_answers,
             )
             if passed:
+                certificate = Certificate.objects.filter(user=request.user, course=course).first()
+                if certificate:
+                    messages.success(request, f"Quiz passed with {score}%. Course completed and certificate unlocked.")
+                    return redirect("certificate_detail", pk=certificate.pk)
                 messages.success(
                     request,
-                    f"Quiz passed with {score}%. The next lesson is now unlocked when available.",
+                    f"Quiz passed with {score}%. The next lesson is now unlocked when available, and your XP progress has been updated.",
                 )
             else:
                 messages.error(request, f"Quiz not passed. Your score is {score}%. Please review and try again.")

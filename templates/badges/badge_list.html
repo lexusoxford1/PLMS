@@ -3,26 +3,70 @@
 {% block title %}Badges{% endblock %}
 
 {% block content %}
+{% include "badges/_level_panel.html" with summary=achievement_summary featured_badge=featured_platform_badge %}
+
+<section class="stats-row">
+    <article class="stat-card">
+        <span class="stat-value">{{ badge_count }}</span>
+        <span class="stat-label">Badges Earned</span>
+    </article>
+    <article class="stat-card">
+        <span class="stat-value">{{ achievement_summary.total_xp }}</span>
+        <span class="stat-label">Total XP</span>
+    </article>
+    <article class="stat-card">
+        <span class="stat-value">{{ milestone_badge_count }}</span>
+        <span class="stat-label">Milestone Badges</span>
+    </article>
+</section>
+
 <section class="section-heading">
     <div>
-        <p class="eyebrow">Badges</p>
-        <h1>Your earned achievements</h1>
+        <p class="eyebrow">Milestone Badge Board</p>
+        <h2>Global missions with XP and level rewards</h2>
+        <p class="muted">{{ badge_count }} of {{ total_badge_count }} badges unlocked.</p>
     </div>
 </section>
 
-<section class="card-grid">
-    {% for award in badges %}
+<section class="achievement-grid">
+    {% for item in platform_badges %}
+        {% include "badges/_badge_card.html" with badge=item.badge award=item.award status=item.status status_label=item.status_label helper_text=item.helper_text progress_percent=item.progress_percent progress_text=item.progress_text xp_reward=item.xp_reward %}
+    {% empty %}
         <article class="card">
-            <span class="badge-tag">Achievement</span>
-            <h2>{{ award.badge.name }}</h2>
-            <p>{{ award.badge.description }}</p>
-            <p class="muted">{{ award.course.title }}</p>
-            <p class="muted">Awarded {{ award.awarded_at|date:"M d, Y" }}</p>
+            <h2>No milestone badges yet</h2>
+            <p>Start learning to unlock your first milestone reward.</p>
+        </article>
+    {% endfor %}
+</section>
+
+<section class="section-heading">
+    <div>
+        <p class="eyebrow">Course Badge Paths</p>
+        <h2>Every course now has its own XP progression track</h2>
+    </div>
+</section>
+
+<section class="course-collection-grid">
+    {% for collection in course_collections %}
+        <article class="card achievement-course-card">
+            <div class="row-between">
+                <div>
+                    <p class="eyebrow">Course Track</p>
+                    <h2>{{ collection.course.title }}</h2>
+                </div>
+                <span class="progress-pill">{{ collection.xp_total }} XP</span>
+            </div>
+            <p>{{ collection.course.description|truncatewords:24 }}</p>
+            <div class="achievement-grid">
+                {% for item in collection.track %}
+                    {% include "badges/_badge_card.html" with badge=item.badge award=item.award status=item.status status_label=item.status_label helper_text=item.helper_text progress_percent=item.progress_percent progress_text=item.progress_text xp_reward=item.xp_reward compact=1 %}
+                {% endfor %}
+            </div>
         </article>
     {% empty %}
         <article class="card">
-            <h2>No badges yet</h2>
-            <p>Complete a course to unlock your first badge.</p>
+            <h2>No course badges yet</h2>
+            <p>Enroll in a course to begin your badge and XP collection.</p>
         </article>
     {% endfor %}
 </section>

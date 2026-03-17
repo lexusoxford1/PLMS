@@ -3,37 +3,181 @@
 {% block title %}Certificate{% endblock %}
 
 {% block content %}
-<section class="section-heading">
+<section class="certificate-hero-banner" style="{{ presentation.theme_style }}">
     <div>
-        <p class="eyebrow">Certificate Viewer</p>
-        <h1>{{ certificate.course.title }}</h1>
-        <p>Certificate No. {{ certificate.certificate_number }}</p>
+        <p class="eyebrow">Completion Certificate</p>
+        <h1>{{ presentation.course_title }}</h1>
+        <p class="certificate-hero-banner__copy">{{ presentation.hero_copy }}</p>
+        <div class="achievement-inline-tags">
+            <span class="badge-tag">ID {{ presentation.certificate_number }}</span>
+            <span class="badge-tag">{{ presentation.course_track }}</span>
+            {% if presentation.badge_name %}
+                <span class="badge-tag">{{ presentation.badge_name }}</span>
+            {% endif %}
+        </div>
     </div>
-    <a class="button compact" href="{% url 'certificate_download' certificate.id %}">Download PDF</a>
+    <div class="card-actions">
+        <a class="button" href="{% url 'certificate_download' certificate.id %}">Download PDF</a>
+        <a class="button compact secondary" href="{% url 'dashboard' %}">Back to Dashboard</a>
+    </div>
 </section>
 
-<section class="card">
-    <div class="stack-list">
-        <div class="stack-item">
-            <strong>Learner</strong>
-            <span>{{ certificate.user.get_full_name|default:certificate.user.username }}</span>
-        </div>
-        <div class="stack-item">
-            <strong>Issued</strong>
-            <span>{{ certificate.issued_at|date:"F d, Y" }}</span>
-        </div>
-        {% if certificate.badge %}
-            <div class="stack-item">
-                <strong>Badge</strong>
-                <span>{{ certificate.badge.name }}</span>
-            </div>
-        {% endif %}
-    </div>
+<section class="certificate-layout">
+    <article class="certificate-stage">
+        {% include "certificates/_certificate_sheet.html" with presentation=presentation %}
+    </article>
 
-    {% if certificate.file %}
-        <div class="certificate-preview">
-            <iframe src="{{ certificate.file.url }}" title="Certificate Preview"></iframe>
+    <aside class="certificate-sidebar">
+        <article class="card certificate-meta-card">
+            <div class="certificate-meta-card__intro">
+                <p class="eyebrow">Certificate Details</p>
+                <span class="certificate-meta-card__chip">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M12 3l7 3v5c0 4.5-2.8 7.7-7 10-4.2-2.3-7-5.5-7-10V6l7-3Z" />
+                        <path d="m9.5 12.5 1.8 1.8 3.7-4.1" />
+                    </svg>
+                    <span>Verified certificate details</span>
+                </span>
+                <h2>Credential summary</h2>
+            </div>
+            <div class="certificate-status-list">
+                <div class="certificate-status-item">
+                    <span class="certificate-status-item__icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z" />
+                            <path d="M5 20a7 7 0 0 1 14 0" />
+                        </svg>
+                    </span>
+                    <div>
+                        <strong>Learner</strong>
+                        <span>{{ presentation.learner_name }}</span>
+                    </div>
+                </div>
+                {% if presentation.show_identity_line %}
+                    <div class="certificate-status-item">
+                        <span class="certificate-status-item__icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24">
+                                <path d="M4 19h16" />
+                                <path d="M8 15V7" />
+                                <path d="M12 19V5" />
+                                <path d="M16 11V9" />
+                            </svg>
+                        </span>
+                        <div>
+                            <strong>Profile line</strong>
+                            <span>{{ presentation.learner_identity_line }}</span>
+                        </div>
+                    </div>
+                {% endif %}
+                {% if presentation.learner_email %}
+                    <div class="certificate-status-item">
+                        <span class="certificate-status-item__icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24">
+                                <path d="M4 7h16" />
+                                <path d="M5 7 12 13l7-6" />
+                                <rect x="3" y="5" width="18" height="14" rx="3" ry="3" />
+                            </svg>
+                        </span>
+                        <div>
+                            <strong>Verified email</strong>
+                            <span>{{ presentation.learner_email }}</span>
+                        </div>
+                    </div>
+                {% endif %}
+                <div class="certificate-status-item">
+                    <span class="certificate-status-item__icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M7 2v4" />
+                            <path d="M17 2v4" />
+                            <rect x="3" y="5" width="18" height="16" rx="3" ry="3" />
+                            <path d="M3 10h18" />
+                        </svg>
+                    </span>
+                    <div>
+                        <strong>Issued</strong>
+                        <span>{{ presentation.issued_date }}</span>
+                    </div>
+                </div>
+                <div class="certificate-status-item">
+                    <span class="certificate-status-item__icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M7 7h10" />
+                            <path d="M7 12h6" />
+                            <path d="M7 17h8" />
+                            <rect x="3" y="4" width="18" height="16" rx="3" ry="3" />
+                        </svg>
+                    </span>
+                    <div>
+                        <strong>Certificate ID</strong>
+                        <span>{{ presentation.certificate_number }}</span>
+                    </div>
+                </div>
+                <div class="certificate-status-item">
+                    <span class="certificate-status-item__icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M5 19h14" />
+                            <path d="M8 16V9" />
+                            <path d="M16 16V9" />
+                            <path d="M7 9h10l-1.5-4h-7Z" />
+                        </svg>
+                    </span>
+                    <div>
+                        <strong>Signatory</strong>
+                        <span>{{ presentation.signatory_name }}</span>
+                    </div>
+                </div>
+                {% if presentation.badge_name %}
+                    <div class="certificate-status-item">
+                        <span class="certificate-status-item__icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24">
+                                <circle cx="12" cy="8.5" r="4.5" />
+                                <path d="m9 13 1.2 7 1.8-1.8 1.8 1.8 1.2-7" />
+                            </svg>
+                        </span>
+                        <div>
+                            <strong>Completion Badge</strong>
+                            <span>{{ presentation.badge_name }}</span>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+        </article>
+
+        <article class="card certificate-meta-card certificate-meta-card--soft">
+            <div class="certificate-meta-card__intro">
+                <p class="eyebrow">Validation</p>
+                <span class="certificate-meta-card__chip">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M12 3l7 3v5c0 4.5-2.8 7.7-7 10-4.2-2.3-7-5.5-7-10V6l7-3Z" />
+                        <path d="m9.5 12.5 1.8 1.8 3.7-4.1" />
+                    </svg>
+                    <span>Trusted and share ready</span>
+                </span>
+                <h2>Trusted and ready to share</h2>
+                <p>{{ presentation.verification_copy }}. Profile updates refresh the generated PDF automatically before preview and download.</p>
+            </div>
+            <div class="certificate-meta-card__note">
+                <strong>Professional presentation</strong>
+                <p>The downloadable PDF keeps the official layout intact for printing, portfolios, and course completion proof.</p>
+            </div>
+            <div class="card-actions">
+                <a class="button compact" href="{% url 'certificate_download' certificate.id %}">Save PDF</a>
+                <a class="button compact secondary" href="{% url 'course_detail' certificate.course.slug %}">Open Course</a>
+            </div>
+        </article>
+    </aside>
+</section>
+
+<section class="card certificate-pdf-card">
+    <div class="section-heading">
+        <div>
+            <p class="eyebrow">Official PDF</p>
+            <h2>Preview the downloadable version</h2>
+            <p class="muted">This is the same PDF attached when the certificate is issued.</p>
         </div>
-    {% endif %}
+    </div>
+    <div class="certificate-preview">
+        <iframe src="{{ certificate.file.url }}" title="Certificate Preview"></iframe>
+    </div>
 </section>
 {% endblock %}

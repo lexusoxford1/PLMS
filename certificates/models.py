@@ -37,17 +37,26 @@ class Certificate(models.Model):
             self.certificate_number = uuid.uuid4().hex[:12].upper()
         super().save(*args, **kwargs)
 
+    def _render_file(self, issued_at):
+        if not self.certificate_number:
+            self.certificate_number = uuid.uuid4().hex[:12].upper()
+        pdf_bytes = generate_certificate_pdf(self, issued_at=issued_at)
+        filename = f"{self.course.slug}-{self.user.username}-{self.certificate_number}.pdf"
+        upload_name = self.file.field.generate_filename(self, filename)
+        if self.file.name and self.file.name != upload_name:
+            self.file.storage.delete(self.file.name)
+        self.file.storage.delete(upload_name)
+        self.file.save(filename, ContentFile(pdf_bytes), save=False)
+
+    def refresh_artifact(self):
+        issued_at = self.issued_at or timezone.now()
+        self._render_file(issued_at)
+        self.issued_at = issued_at
+        self.save()
+
     def issue(self, send_email=True):
         issued_at = self.issued_at or timezone.now()
-        pdf_bytes = generate_certificate_pdf(
-            student_name=self.user.get_full_name() or self.user.username,
-            course_title=self.course.title,
-            issued_at=issued_at,
-            certificate_number=self.certificate_number or uuid.uuid4().hex[:12].upper(),
-            badge_name=self.badge.name if self.badge else "",
-        )
-        filename = f"{self.course.slug}-{self.user.username}-{self.certificate_number}.pdf"
-        self.file.save(filename, ContentFile(pdf_bytes), save=False)
+        self._render_file(issued_at)
         self.issued_at = issued_at
         self.save()
         if send_email:
@@ -61,7 +70,7 @@ class Certificate(models.Model):
         email = EmailMessage(
             subject=f"Your PLMS certificate for {self.course.title}",
             body=(
-                f"Congratulations, {self.user.get_full_name() or self.user.username}!\n\n"
+                f"Congratulations, {self.user.get_certificate_display_name()}!\n\n"
                 f"Attached is your certificate for completing {self.course.title}."
             ),
             from_email=settings.DEFAULT_FROM_EMAIL,

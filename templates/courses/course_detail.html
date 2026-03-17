@@ -27,10 +27,134 @@
     <div class="hero-panel">
         <h2>Course Overview</h2>
         <p>{{ course.overview|default:"This course is structured into sequential lessons with lecture, activity, and quiz checkpoints." }}</p>
+        <div class="achievement-inline-tags">
+            <span class="badge-tag">+ {{ course_xp_total }} XP course path</span>
+            <span class="badge-tag">Enrollment badge on join</span>
+            <span class="badge-tag">Completion badge on finish</span>
+        </div>
     </div>
 </section>
 
-<section class="card">
+<section class="section-heading">
+    <div>
+        <p class="eyebrow">Certificate Preview</p>
+        <h2>Default design that unlocks on completion</h2>
+        <p class="muted">
+            The certificate keeps this modern default layout while the course is still in progress. Personal details are added only after successful completion.
+        </p>
+    </div>
+</section>
+
+<section class="certificate-layout">
+    <article class="certificate-stage">
+        {% include "certificates/_certificate_sheet.html" with presentation=certificate_preview %}
+    </article>
+    <aside class="certificate-sidebar">
+        <article class="card certificate-meta-card {% if not certificate %}certificate-meta-card--soft{% endif %}">
+            <div class="certificate-meta-card__intro">
+                <p class="eyebrow">{% if certificate %}Certificate Ready{% else %}Default Preview{% endif %}</p>
+                <span class="certificate-meta-card__chip">
+                    {% if certificate %}
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M12 3l7 3v5c0 4.5-2.8 7.7-7 10-4.2-2.3-7-5.5-7-10V6l7-3Z" />
+                            <path d="m9.5 12.5 1.8 1.8 3.7-4.1" />
+                        </svg>
+                        <span>Professional certificate ready</span>
+                    {% else %}
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M8 11V8a4 4 0 1 1 8 0v3" />
+                            <rect x="5" y="11" width="14" height="9" rx="2" ry="2" />
+                            <path d="M12 15v2" />
+                        </svg>
+                        <span>Preview stays protected</span>
+                    {% endif %}
+                </span>
+                <h2>{% if certificate %}Your certificate is unlocked{% else %}Personal details stay hidden first{% endif %}</h2>
+                <p>
+                    {% if certificate %}
+                        Your name, completion date, and certificate ID are now active because you finished the course.
+                    {% else %}
+                        This preview intentionally hides the learner name and certificate ID until the course is successfully completed.
+                    {% endif %}
+                </p>
+            </div>
+            <div class="certificate-status-list">
+                <div class="certificate-status-item">
+                    <span class="certificate-status-item__icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z" />
+                            <path d="M5 20a7 7 0 0 1 14 0" />
+                        </svg>
+                    </span>
+                    <div>
+                        <strong>{% if certificate %}Name visible{% else %}Name hidden{% endif %}</strong>
+                        <span>{% if certificate %}The learner identity is now printed clearly on the final certificate.{% else %}The learner name is protected in preview mode until course completion.{% endif %}</span>
+                    </div>
+                </div>
+                <div class="certificate-status-item">
+                    <span class="certificate-status-item__icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M7 7h10" />
+                            <path d="M7 12h6" />
+                            <path d="M7 17h8" />
+                            <rect x="3" y="4" width="18" height="16" rx="3" ry="3" />
+                        </svg>
+                    </span>
+                    <div>
+                        <strong>{% if certificate %}ID visible{% else %}ID hidden{% endif %}</strong>
+                        <span>{% if certificate %}A unique certificate ID is attached for validation and sharing.{% else %}The validation ID appears only after the course has been completed successfully.{% endif %}</span>
+                    </div>
+                </div>
+                <div class="certificate-status-item">
+                    <span class="certificate-status-item__icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M12 3v12" />
+                            <path d="m7 10 5 5 5-5" />
+                            <path d="M5 21h14" />
+                        </svg>
+                    </span>
+                    <div>
+                        <strong>{% if certificate %}Download ready{% else %}Unlock on finish{% endif %}</strong>
+                        <span>{% if certificate %}The polished certificate PDF is ready for portfolios, submissions, and printing.{% else %}Finish the lessons and final quiz to unlock the personalized certificate file automatically.{% endif %}</span>
+                    </div>
+                </div>
+            </div>
+            <div class="certificate-meta-card__note">
+                <strong>{% if certificate %}Share-ready design{% else %}What unlocks after completion{% endif %}</strong>
+                <p>{% if certificate %}Open the certificate anytime or download the final PDF whenever you need an official copy.{% else %}Completion adds the learner name, issue date, and verification ID to the same certificate design you see here.{% endif %}</p>
+            </div>
+            <div class="card-actions">
+                {% if certificate %}
+                    <a class="button compact" href="{% url 'certificate_detail' certificate.id %}">Open Certificate</a>
+                    <a class="button compact secondary" href="{% url 'certificate_download' certificate.id %}">Download PDF</a>
+                {% elif is_enrolled %}
+                    <a class="button compact" href="#course-lessons">Finish the Course</a>
+                {% else %}
+                    <form method="post" action="{% url 'enroll_course' course.slug %}">
+                        {% csrf_token %}
+                        <button type="submit" class="button compact">Enroll to Unlock</button>
+                    </form>
+                {% endif %}
+            </div>
+        </article>
+    </aside>
+</section>
+
+<section class="section-heading">
+    <div>
+        <p class="eyebrow">Achievement Path</p>
+        <h2>Course XP path and badge milestones</h2>
+        <p class="muted">This course awards XP on enrollment and a larger XP reward on completion, with progress tracked visually like an achievement board.</p>
+    </div>
+</section>
+
+<section class="achievement-grid">
+    {% for item in badge_track %}
+        {% include "badges/_badge_card.html" with badge=item.badge award=item.award status=item.status status_label=item.status_label helper_text=item.helper_text progress_percent=item.progress_percent progress_text=item.progress_text xp_reward=item.xp_reward %}
+    {% endfor %}
+</section>
+
+<section class="card" id="course-lessons">
     <h2>Lessons</h2>
     <div class="checklist">
         {% for row in outline %}

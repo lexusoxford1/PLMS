@@ -3,64 +3,81 @@ import re
 from django.conf import settings
 
 from courses.activity_results import ActivityEvaluationResult, ERROR_MESSAGE, SUCCESS_MESSAGE
+from courses.activity_config import get_effective_activity_language, get_effective_activity_rules
 from courses.csharp_runner.service import validate_csharp_activity_submission
+from courses.php_runner.service import validate_php_activity_submission
+from courses.python_runner.service import validate_python_activity_submission
 
 from .executors import SUPPORTED_LANGUAGES, execute_code
 from .feedback import build_beginner_friendly_error, language_label
+from .notifications import build_code_runner_system_notification
 from .policies import find_blocked_construct
 
 
 def validate_code_activity_submission(lesson, response):
     submission = (response or "").strip()
+    rules = get_effective_activity_rules(lesson)
+    language = get_effective_activity_language(lesson) or (rules.get("language") or "").lower()
+
     if not submission:
-        return ActivityEvaluationResult(
-            is_correct=False,
-            title=ERROR_MESSAGE,
-            explanation="Your submission is empty. Write your code before checking the activity.",
-            execution_status="error",
-            used_code_runner=True,
-            language=(lesson.activity_language or ""),
+        return _with_runner_notification(
+            ActivityEvaluationResult(
+                is_correct=False,
+                title=ERROR_MESSAGE,
+                explanation="Your submission is empty. Write your code before checking the activity.",
+                execution_status="error",
+                used_code_runner=True,
+                language=language,
+            )
         )
 
-    rules = lesson.activity_validation_rules or {}
-    language = (rules.get("language") or "").lower()
     if language not in SUPPORTED_LANGUAGES:
-        return ActivityEvaluationResult(
-            is_correct=False,
-            title=ERROR_MESSAGE,
-            explanation="This activity is missing a supported language configuration.",
-            execution_status="error",
-            used_code_runner=True,
-            language=language,
-            details={"reason": "unsupported_language"},
+        return _with_runner_notification(
+            ActivityEvaluationResult(
+                is_correct=False,
+                title=ERROR_MESSAGE,
+                explanation="This activity is missing a supported language configuration.",
+                execution_status="error",
+                used_code_runner=True,
+                language=language,
+                details={"reason": "unsupported_language"},
+            )
         )
     if language == "csharp":
         return validate_csharp_activity_submission(lesson, response)
+    if language == "python":
+        return validate_python_activity_submission(lesson, response)
+    if language == "php":
+        return validate_php_activity_submission(lesson, response)
 
     max_source_bytes = int(getattr(settings, "CODE_RUNNER", {}).get("MAX_SOURCE_BYTES", 20000))
     if len(submission.encode("utf-8")) > max_source_bytes:
-        return ActivityEvaluationResult(
-            is_correct=False,
-            title=ERROR_MESSAGE,
-            explanation="Your code is too large for this lesson runner to check safely.",
-            execution_status="error",
-            used_code_runner=True,
-            language=language,
-            hint="Remove extra content and keep only the solution required for this activity.",
+        return _with_runner_notification(
+            ActivityEvaluationResult(
+                is_correct=False,
+                title=ERROR_MESSAGE,
+                explanation="Your code is too large for this lesson runner to check safely.",
+                execution_status="error",
+                used_code_runner=True,
+                language=language,
+                hint="Remove extra content and keep only the solution required for this activity.",
+            )
         )
 
     blocked_construct = find_blocked_construct(language, submission)
     if blocked_construct:
-        return ActivityEvaluationResult(
-            is_correct=False,
-            title=ERROR_MESSAGE,
-            explanation=blocked_construct.explanation,
-            execution_status="error",
-            used_code_runner=True,
-            language=language,
-            hint=blocked_construct.hint,
-            learning_suggestion="Practice with the core language features shown in the lesson before adding advanced APIs.",
-            details={"reason": "blocked_construct"},
+        return _with_runner_notification(
+            ActivityEvaluationResult(
+                is_correct=False,
+                title=ERROR_MESSAGE,
+                explanation=blocked_construct.explanation,
+                execution_status="error",
+                used_code_runner=True,
+                language=language,
+                hint=blocked_construct.hint,
+                learning_suggestion="Practice with the core language features shown in the lesson before adding advanced APIs.",
+                details={"reason": "blocked_construct"},
+            )
         )
 
     source_issues = _evaluate_source_rules(submission, rules)
@@ -79,21 +96,23 @@ def validate_code_activity_submission(lesson, response):
             timed_out=execution_result.timed_out,
             runtime_available=execution_result.runtime_available,
         )
-        return ActivityEvaluationResult(
-            is_correct=False,
-            title=ERROR_MESSAGE,
-            explanation=explanation,
-            execution_status=execution_result.execution_status,
-            program_output=execution_result.program_output,
-            errors=execution_result.errors,
-            hint=hint,
-            learning_suggestion=suggestion,
-            language=language,
-            execution_time_ms=execution_result.execution_time_ms,
-            runtime_available=execution_result.runtime_available,
-            timed_out=execution_result.timed_out,
-            used_code_runner=True,
-            details=execution_result.details,
+        return _with_runner_notification(
+            ActivityEvaluationResult(
+                is_correct=False,
+                title=ERROR_MESSAGE,
+                explanation=explanation,
+                execution_status=execution_result.execution_status,
+                program_output=execution_result.program_output,
+                errors=execution_result.errors,
+                hint=hint,
+                learning_suggestion=suggestion,
+                language=language,
+                execution_time_ms=execution_result.execution_time_ms,
+                runtime_available=execution_result.runtime_available,
+                timed_out=execution_result.timed_out,
+                used_code_runner=True,
+                details=execution_result.details,
+            )
         )
 
     output_match, output_message = _output_matches(rules, execution_result.program_output)
@@ -106,15 +125,35 @@ def validate_code_activity_submission(lesson, response):
             hints.append(output_message)
         if lesson.activity_hint:
             hints.append(lesson.activity_hint)
-        return ActivityEvaluationResult(
-            is_correct=False,
-            title=ERROR_MESSAGE,
-            explanation=explanation,
+        return _with_runner_notification(
+            ActivityEvaluationResult(
+                is_correct=False,
+                title=ERROR_MESSAGE,
+                explanation=explanation,
+                execution_status=execution_result.execution_status,
+                program_output=execution_result.program_output,
+                errors=execution_result.errors,
+                hint=" ".join(dict.fromkeys(part for part in hints if part)),
+                learning_suggestion=rules.get("learning_suggestion") or _default_learning_suggestion(language),
+                language=language,
+                execution_time_ms=execution_result.execution_time_ms,
+                runtime_available=execution_result.runtime_available,
+                timed_out=execution_result.timed_out,
+                used_code_runner=True,
+                details=execution_result.details,
+            )
+        )
+
+    return _with_runner_notification(
+        ActivityEvaluationResult(
+            is_correct=True,
+            title=SUCCESS_MESSAGE,
+            explanation=rules.get("success_explanation") or f"Your {language_label(language)} program produced the expected result.",
             execution_status=execution_result.execution_status,
             program_output=execution_result.program_output,
             errors=execution_result.errors,
-            hint=" ".join(dict.fromkeys(part for part in hints if part)),
-            learning_suggestion=rules.get("learning_suggestion") or _default_learning_suggestion(language),
+            hint=rules.get("success_hint", ""),
+            learning_suggestion=rules.get("learning_suggestion", ""),
             language=language,
             execution_time_ms=execution_result.execution_time_ms,
             runtime_available=execution_result.runtime_available,
@@ -122,23 +161,13 @@ def validate_code_activity_submission(lesson, response):
             used_code_runner=True,
             details=execution_result.details,
         )
-
-    return ActivityEvaluationResult(
-        is_correct=True,
-        title=SUCCESS_MESSAGE,
-        explanation=rules.get("success_explanation") or f"Your {language_label(language)} program produced the expected result.",
-        execution_status=execution_result.execution_status,
-        program_output=execution_result.program_output,
-        errors=execution_result.errors,
-        hint=rules.get("success_hint", ""),
-        learning_suggestion=rules.get("learning_suggestion", ""),
-        language=language,
-        execution_time_ms=execution_result.execution_time_ms,
-        runtime_available=execution_result.runtime_available,
-        timed_out=execution_result.timed_out,
-        used_code_runner=True,
-        details=execution_result.details,
     )
+
+
+def _with_runner_notification(result):
+    if not result.notification:
+        result.notification = build_code_runner_system_notification(result=result)
+    return result
 
 
 def _evaluate_source_rules(submission, rules):

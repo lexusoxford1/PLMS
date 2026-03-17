@@ -3,36 +3,102 @@
 {% block title %}Dashboard{% endblock %}
 
 {% block content %}
-<section class="section-heading">
-    <div>
-        <p class="eyebrow">Learner Dashboard</p>
-        <h1>Welcome back, {{ request.user.first_name|default:request.user.username }}</h1>
-    </div>
-</section>
+{% include "badges/_level_panel.html" with summary=achievement_summary featured_badge=featured_platform_badge %}
 
 <section class="stats-row">
     <article class="stat-card">
-        <span class="stat-value">{{ dashboard_courses|length }}</span>
-        <span class="stat-label">Enrolled Courses</span>
+        <span class="stat-value">Lv {{ achievement_summary.level }}</span>
+        <span class="stat-label">Current Level</span>
     </article>
     <article class="stat-card">
-        <span class="stat-value">{{ badges|length }}</span>
+        <span class="stat-value">{{ achievement_summary.total_xp }}</span>
+        <span class="stat-label">Total XP</span>
+    </article>
+    <article class="stat-card">
+        <span class="stat-value">{{ badge_count }}</span>
         <span class="stat-label">Badges Earned</span>
     </article>
     <article class="stat-card">
-        <span class="stat-value">{{ certificates|length }}</span>
+        <span class="stat-value">{{ completed_milestone_count }}</span>
+        <span class="stat-label">Missions Completed</span>
+    </article>
+    <article class="stat-card">
+        <span class="stat-value">{{ certificate_count }}</span>
         <span class="stat-label">Certificates Ready</span>
     </article>
 </section>
 
-<section class="card-grid wide">
+<section class="split-grid">
+    <article class="card">
+        <p class="eyebrow">Achievement Summary</p>
+        <h2>Progress at a glance</h2>
+        <div class="stack-list">
+            <div class="stack-item">
+                <strong>Course badges</strong>
+                <span>{{ achievement_summary.course_badges }} unlocked</span>
+            </div>
+            <div class="stack-item">
+                <strong>Milestone badges</strong>
+                <span>{{ achievement_summary.milestone_badges }} unlocked</span>
+            </div>
+            <div class="stack-item">
+                <strong>Next level</strong>
+                <span>{{ achievement_summary.xp_to_next_level }} XP remaining</span>
+            </div>
+            {% if featured_platform_badge %}
+                <div class="stack-item">
+                    <strong>Active mission</strong>
+                    <span>{{ featured_platform_badge.badge.name }} - {{ featured_platform_badge.progress_text }}</span>
+                </div>
+            {% endif %}
+        </div>
+        <div class="card-actions">
+            <a class="button compact secondary" href="{% url 'badge_list' %}">View Full Badge Hub</a>
+        </div>
+    </article>
+
+    <article class="card">
+        <p class="eyebrow">Recent Unlocks</p>
+        <h2>Latest badges</h2>
+        <div class="stack-list">
+            {% for award in recent_badges %}
+                <div class="stack-item">
+                    <strong>{{ award.badge.name }}</strong>
+                    <span>+{{ award.badge.xp_reward }} XP{% if award.course %} - {{ award.course.title }}{% endif %}</span>
+                </div>
+            {% empty %}
+                <p class="muted">No badges unlocked yet.</p>
+            {% endfor %}
+        </div>
+    </article>
+</section>
+
+<section class="section-heading">
+    <div>
+        <p class="eyebrow">Course Journeys</p>
+        <h2>Course progress summaries</h2>
+        <p class="muted">The full badge collection stays on the badges page. Here we only show a quick progress summary per course.</p>
+    </div>
+</section>
+
+<section class="course-collection-grid">
     {% for row in dashboard_courses %}
-        <article class="card">
+        <article class="card course-journey-card">
             <div class="row-between">
-                <h2>{{ row.course.title }}</h2>
+                <div>
+                    <p class="eyebrow">Course Progress</p>
+                    <h2>{{ row.course.title }}</h2>
+                </div>
                 <span class="progress-pill">{{ row.progress_percent }}%</span>
             </div>
             <p>{{ row.course.description|truncatewords:24 }}</p>
+            <div class="achievement-inline-tags">
+                <span class="badge-tag">{{ row.unlocked_badge_count }}/{{ row.total_badge_count }} badges</span>
+                <span class="badge-tag">{{ row.earned_xp }}/{{ row.total_xp }} XP</span>
+                {% if row.next_badge %}
+                    <span class="badge-tag">Next: {{ row.next_badge.badge.stage_label }}</span>
+                {% endif %}
+            </div>
             <div class="checklist">
                 {% for lesson_row in row.outline %}
                     <div class="check-item">
@@ -51,7 +117,7 @@
     {% empty %}
         <article class="card">
             <h2>No enrollments yet</h2>
-            <p>Enroll in a course to start tracking your lessons, quizzes, badges, and certificates.</p>
+            <p>Enroll in a course to start tracking lessons, quizzes, XP, badges, and certificates.</p>
             <a class="button compact" href="{% url 'course_list' %}">Explore Courses</a>
         </article>
     {% endfor %}
@@ -72,15 +138,21 @@
         </div>
     </article>
     <article class="card">
-        <h2>Latest Achievements</h2>
+        <h2>Certificates Ready</h2>
         <div class="stack-list">
-            {% for award in badges %}
+            {% for certificate in certificates %}
                 <div class="stack-item">
-                    <strong>{{ award.badge.name }}</strong>
-                    <span>{{ award.course.title }} - {{ award.awarded_at|date:"M d, Y" }}</span>
+                    <div class="stack-item__meta">
+                        <strong>{{ certificate.course.title }}</strong>
+                        <span>Issued {{ certificate.issued_at|date:"M d, Y" }}</span>
+                    </div>
+                    <div class="stack-item__actions">
+                        <a class="button compact" href="{% url 'certificate_detail' certificate.id %}">Preview</a>
+                        <a class="button compact secondary" href="{% url 'certificate_download' certificate.id %}">PDF</a>
+                    </div>
                 </div>
             {% empty %}
-                <p class="muted">Complete a course to earn your first badge.</p>
+                <p class="muted">Finish a course to generate your first certificate.</p>
             {% endfor %}
         </div>
     </article>

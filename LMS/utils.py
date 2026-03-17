@@ -92,7 +92,7 @@ def build_course_outline(user, course):
 
 @transaction.atomic
 def award_course_completion(user, course):
-    from badges.models import Badge, UserBadge
+    from badges.services import award_completion_badge, award_enrollment_badge, sync_platform_badges
     from certificates.models import Certificate
     from courses.models import Enrollment
     from progress.models import LessonProgress
@@ -116,21 +116,9 @@ def award_course_completion(user, course):
         enrollment.completed_at = timezone.now()
         enrollment.save(update_fields=["completed_at"])
 
-    badge, _ = Badge.objects.get_or_create(
-        course=course,
-        defaults={
-            "name": f"{course.title} Completion Badge",
-            "description": f"Awarded for successfully finishing {course.title}.",
-        },
-    )
-    user_badge, created = UserBadge.objects.get_or_create(
-        user=user,
-        badge=badge,
-        defaults={"course": course},
-    )
-    if not created and user_badge.course_id != course.id:
-        user_badge.course = course
-        user_badge.save(update_fields=["course"])
+    award_enrollment_badge(user, course)
+    user_badge, _ = award_completion_badge(user, course)
+    badge = user_badge.badge
 
     certificate, created = Certificate.objects.get_or_create(
         user=user,
@@ -144,15 +132,21 @@ def award_course_completion(user, course):
     if created or not certificate.file:
         certificate.issue()
 
+    sync_platform_badges(user)
     return certificate
 
 
 def sync_progress_after_quiz_attempt(attempt):
+    from badges.services import sync_platform_badges
+
     progress = get_or_create_lesson_progress(attempt.user, attempt.quiz.lesson)
     if attempt.passed and not progress.quiz_passed:
         progress.quiz_passed = True
     progress.refresh_completion_state()
     progress.save()
+
+    if attempt.passed:
+        sync_platform_badges(attempt.user)
 
     if progress.completed_at is not None:
         award_course_completion(attempt.user, attempt.quiz.lesson.course)

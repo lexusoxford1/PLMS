@@ -1,12 +1,101 @@
 document.addEventListener("DOMContentLoaded", () => {
     const toastStack = document.querySelector("[data-toast-stack]");
-    const notify = createNotifier(toastStack);
+    createNotifier(toastStack);
 
     initializeExistingToasts();
-    initializeCodeRunnerForms(notify);
-    initializeRunnerResetButtons(notify);
-    initializeViewResultsButtons(notify);
+    initializeBadgeCelebration();
+    initializeProfilePanels();
+    initializeCodeRunnerForms();
+    initializeRunnerResetButtons();
 });
+
+function initializeProfilePanels() {
+    document.querySelectorAll("[data-profile-workspace]").forEach((workspace) => {
+        const triggers = Array.from(workspace.querySelectorAll("[data-profile-nav]"));
+        const navButtons = Array.from(workspace.querySelectorAll(".profile-sidebar__nav-button[data-profile-nav]"));
+        const panels = Array.from(workspace.querySelectorAll("[data-profile-panel]"));
+        const toggleButton = workspace.querySelector("[data-profile-toggle]");
+        if (!triggers.length || !panels.length) {
+            return;
+        }
+
+        const validPanels = new Set(panels.map((panel) => panel.dataset.profilePanel));
+        const collapseStorageKey = "plms-profile-sidebar-collapsed";
+        const defaultPanel = validPanels.has(workspace.dataset.defaultPanel)
+            ? workspace.dataset.defaultPanel
+            : panels[0].dataset.profilePanel;
+        const savedCollapsedState = window.localStorage.getItem(collapseStorageKey);
+
+        const resolveHashPanel = () => {
+            const hash = window.location.hash || "";
+            if (!hash.startsWith("#profile-")) {
+                return "";
+            }
+            const panelId = hash.replace("#profile-", "");
+            return validPanels.has(panelId) ? panelId : "";
+        };
+
+        const applyCollapsedState = (collapsed) => {
+            workspace.classList.toggle("is-collapsed", collapsed);
+            if (!toggleButton) {
+                return;
+            }
+
+            toggleButton.setAttribute("aria-expanded", collapsed ? "false" : "true");
+            toggleButton.setAttribute("aria-label", collapsed ? "Expand sidebar" : "Collapse sidebar");
+            toggleButton.setAttribute("title", collapsed ? "Expand sidebar" : "Collapse sidebar");
+        };
+
+        const activatePanel = (panelId, updateHash = true) => {
+            if (!validPanels.has(panelId)) {
+                return;
+            }
+
+            panels.forEach((panel) => {
+                panel.hidden = panel.dataset.profilePanel !== panelId;
+            });
+
+            navButtons.forEach((button) => {
+                const isActive = button.dataset.profileNav === panelId;
+                button.classList.toggle("is-active", isActive);
+                button.setAttribute("aria-selected", isActive ? "true" : "false");
+            });
+
+            if (updateHash) {
+                const nextHash = `#profile-${panelId}`;
+                if (window.location.hash !== nextHash) {
+                    history.replaceState(null, "", nextHash);
+                }
+            }
+        };
+
+        triggers.forEach((trigger) => {
+            trigger.addEventListener("click", () => {
+                activatePanel(trigger.dataset.profileNav);
+            });
+        });
+
+        if (toggleButton) {
+            toggleButton.addEventListener("click", () => {
+                const collapsed = !workspace.classList.contains("is-collapsed");
+                applyCollapsedState(collapsed);
+                window.localStorage.setItem(collapseStorageKey, collapsed ? "true" : "false");
+            });
+        }
+
+        window.addEventListener("hashchange", () => {
+            const hashPanel = resolveHashPanel();
+            if (hashPanel) {
+                activatePanel(hashPanel, false);
+            }
+        });
+
+        applyCollapsedState(
+            savedCollapsedState === null ? window.innerWidth < 1180 : savedCollapsedState === "true"
+        );
+        activatePanel(resolveHashPanel() || defaultPanel, false);
+    });
+}
 
 function createNotifier(toastStack) {
     const notify = ({ level = "info", title = "Notice", message = "", duration = 4800 }) => {
@@ -83,7 +172,89 @@ function dismissToast(toast) {
     window.setTimeout(() => toast.remove(), 220);
 }
 
-function initializeCodeRunnerForms(notify) {
+function initializeBadgeCelebration() {
+    const celebration = document.querySelector("[data-badge-celebration]");
+    if (!celebration) {
+        return;
+    }
+
+    const slides = Array.from(celebration.querySelectorAll("[data-badge-slide]"));
+    const progress = celebration.querySelector("[data-badge-progress]");
+    const nextButton = celebration.querySelector("[data-badge-next]");
+    const closeButtons = celebration.querySelectorAll("[data-badge-close]");
+    const dialog = celebration.querySelector(".badge-celebration__dialog");
+    let activeIndex = 0;
+
+    if (!slides.length) {
+        return;
+    }
+
+    const updateSlide = () => {
+        slides.forEach((slide, index) => {
+            slide.hidden = index !== activeIndex;
+        });
+
+        if (progress) {
+            progress.textContent = `${activeIndex + 1} / ${slides.length}`;
+        }
+
+        if (nextButton) {
+            nextButton.textContent = activeIndex === slides.length - 1 ? "Continue" : "Next Badge";
+        }
+    };
+
+    const closeCelebration = () => {
+        celebration.classList.remove("visible");
+        window.setTimeout(() => {
+            celebration.hidden = true;
+            celebration.remove();
+        }, 220);
+    };
+
+    closeButtons.forEach((button) => {
+        button.addEventListener("click", closeCelebration);
+    });
+
+    if (nextButton) {
+        nextButton.addEventListener("click", () => {
+            if (activeIndex < slides.length - 1) {
+                activeIndex += 1;
+                updateSlide();
+                return;
+            }
+            closeCelebration();
+        });
+    }
+
+    document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape" && document.body.contains(celebration)) {
+            closeCelebration();
+        }
+    });
+
+    updateSlide();
+    celebration.hidden = false;
+    requestAnimationFrame(() => {
+        celebration.classList.add("visible");
+        if (dialog) {
+            if (!dialog.hasAttribute("tabindex")) {
+                dialog.setAttribute("tabindex", "-1");
+            }
+            dialog.focus({ preventScroll: true });
+        }
+    });
+
+    if (window.PLMS && typeof window.PLMS.notify === "function") {
+        window.PLMS.notify({
+            level: "success",
+            title: "Badge unlocked",
+            message: "Your new achievement has been added to the collection.",
+            duration: 3600,
+        });
+    }
+}
+
+function initializeCodeRunnerForms() {
     document.querySelectorAll("[data-code-runner-form]").forEach((form) => {
         form.addEventListener("submit", async (event) => {
             const textarea = form.querySelector("textarea[name='response']");
@@ -99,8 +270,9 @@ function initializeCodeRunnerForms(notify) {
             event.preventDefault();
 
             const shell = form.closest("[data-code-runner-shell]");
-            const submitButton = form.querySelector("[data-runner-submit]");
+            const submitButton = (shell && shell.querySelector("[data-runner-submit]")) || form.querySelector("[data-runner-submit]");
             setFormBusy(shell, submitButton, true);
+            showRunnerPendingState(shell, submitButton);
 
             try {
                 const response = await fetch(apiUrl, {
@@ -119,33 +291,58 @@ function initializeCodeRunnerForms(notify) {
                 if (!response.ok) {
                     if (payload.activity) {
                         updateRunnerUI(shell, payload);
+                    } else {
+                        showRunnerPanelNotification(
+                            shell,
+                            payload.system_notification || payload.notification || {
+                                level: "error",
+                                title: "Code runner request failed",
+                                message: "The server could not process the code submission.",
+                            },
+                            {
+                                statusLabel: "Request failed",
+                                summaryLabel: "Status: Error",
+                                summaryTone: "error",
+                            },
+                        );
+                        maybeFocusCompilerResults(shell);
                     }
                     updateRunnerStatus(shell, "error", "Request failed");
-                    notify(
-                        payload.system_notification || payload.notification || {
-                            level: "error",
-                            title: "Compiler request failed",
-                            message: "The server could not process the code submission.",
-                        },
-                    );
                     return;
                 }
 
                 updateRunnerUI(shell, payload);
-                notify(
-                    payload.system_notification || payload.notification || {
-                        level: "info",
-                        title: "Submission received",
-                        message: "Your code has been processed.",
+                if (!payload.activity && shell) {
+                    showRunnerPanelNotification(
+                        shell,
+                        payload.system_notification || payload.notification || {
+                            level: "info",
+                            title: "Submission received",
+                            message: "Your code has been processed.",
+                        },
+                        {
+                            statusLabel: "Updated",
+                            summaryLabel: "Status: Updated",
+                            summaryTone: "neutral",
+                        },
+                    );
+                }
+            } catch (error) {
+                showRunnerPanelNotification(
+                    shell,
+                    {
+                        level: "error",
+                        title: "Code runner unavailable",
+                        message: "We could not connect to the code runner. Please try again.",
+                    },
+                    {
+                        statusLabel: "Offline",
+                        summaryLabel: "Status: Error",
+                        summaryTone: "error",
                     },
                 );
-            } catch (error) {
                 updateRunnerStatus(shell, "error", "Offline");
-                notify({
-                    level: "error",
-                    title: "Compiler unavailable",
-                    message: "We could not connect to the code runner. Please try again.",
-                });
+                maybeFocusCompilerResults(shell);
             } finally {
                 setFormBusy(shell, submitButton, false);
             }
@@ -153,7 +350,7 @@ function initializeCodeRunnerForms(notify) {
     });
 }
 
-function initializeRunnerResetButtons(notify) {
+function initializeRunnerResetButtons() {
     document.querySelectorAll("[data-runner-reset]").forEach((button) => {
         button.addEventListener("click", () => {
             const shell = button.closest("[data-code-runner-shell]");
@@ -167,30 +364,8 @@ function initializeRunnerResetButtons(notify) {
             textarea.value = starterCode;
             textarea.focus();
             textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+            resetRunnerResults(shell);
             updateRunnerStatus(shell, "ready", "Starter restored");
-
-            if (notify) {
-                notify({
-                    level: "info",
-                    title: "Starter code restored",
-                    message: "The editor was reset to the original lesson code. Compile again when you're ready.",
-                });
-            }
-        });
-    });
-}
-
-function initializeViewResultsButtons(notify) {
-    document.querySelectorAll("[data-runner-view-results]").forEach((button) => {
-        button.addEventListener("click", () => {
-            const shell = button.closest("[data-code-runner-shell]");
-            if (!focusRunnerResults(shell) && notify) {
-                notify({
-                    level: "info",
-                    title: "No results yet",
-                    message: "Compile and run the code first, then open the results panel.",
-                });
-            }
         });
     });
 }
@@ -200,7 +375,7 @@ function setFormBusy(shell, submitButton, busy) {
         return;
     }
 
-    const textarea = shell.querySelector("textarea[name='response']");
+    const textarea = shell ? shell.querySelector("textarea[name='response']") : null;
     const isValidated = textarea && textarea.disabled;
 
     if (busy) {
@@ -217,7 +392,7 @@ function setFormBusy(shell, submitButton, busy) {
     }
 
     submitButton.disabled = false;
-    submitButton.textContent = submitButton.dataset.idleLabel || "Run and Check Code";
+    submitButton.textContent = submitButton.dataset.idleLabel || "Run Code";
 }
 
 function updateRunnerUI(shell, payload) {
@@ -285,6 +460,125 @@ function updateRunnerUI(shell, payload) {
     maybeFocusCompilerResults(shell);
 }
 
+function showRunnerPendingState(shell, submitButton) {
+    if (!shell) {
+        return;
+    }
+
+    showRunnerPanelNotification(
+        shell,
+        {
+            level: "info",
+            title: submitButton?.dataset?.busyLabel || "Running code",
+            message: "Your latest code is being executed. Results and backend feedback will appear below.",
+            label: "Run in progress",
+        },
+        {
+            summaryLabel: "Status: Running",
+            summaryTone: "running",
+        },
+    );
+}
+
+function resetRunnerResults(shell) {
+    if (!shell) {
+        return;
+    }
+
+    const defaults = getRunnerNotificationDefaults(shell);
+
+    setText(shell.querySelector("[data-runner-output]"), "");
+    setText(shell.querySelector("[data-runner-errors]"), "");
+    setText(shell.querySelector("[data-runner-suggestion]"), "");
+    setText(shell.querySelector("[data-runner-execution-time]"), "");
+    setText(shell.querySelector("[data-system-detail]"), "");
+    setText(shell.querySelector("[data-system-detail-caption]"), shell?.dataset?.detailCaption || "Runner service output");
+    toggleVisibility(shell.querySelector("[data-runner-output-card]"), false);
+    toggleVisibility(shell.querySelector("[data-runner-error-card]"), false);
+    toggleVisibility(shell.querySelector("[data-runner-suggestion-card]"), false);
+    toggleVisibility(shell.querySelector("[data-system-detail-card]"), false);
+    updateRunnerTitles(shell, {}, { details: {} });
+
+    showRunnerPanelNotification(
+        shell,
+        {
+            level: "info",
+            title: "Starter code restored",
+            message: "The editor was reset to the original lesson code. Run Code when you're ready.",
+            label: "Editor update",
+        },
+        {
+            statusLabel: "Starter restored",
+            summaryLabel: "Status: Ready",
+            summaryTone: "neutral",
+            clearMeta: true,
+        },
+    );
+
+    if (!shell.querySelector("[data-system-notification]")) {
+        setText(shell.querySelector("[data-runner-feedback-title]"), defaults.title);
+        setText(shell.querySelector("[data-runner-feedback-body]"), defaults.message);
+    }
+}
+
+function showRunnerPanelNotification(shell, notification, options = {}) {
+    if (!shell) {
+        return;
+    }
+
+    const level = notification.level || options.level || "info";
+    const tone = level === "info" ? "neutral" : level;
+    const defaults = getRunnerNotificationDefaults(shell);
+    const title = notification.title || defaults.title;
+    const message = notification.message || defaults.message;
+    const label = notification.label || (notification.kind ? formatNotificationKind(notification.kind) : defaults.label);
+
+    updateRunnerFeedbackCard(shell, tone, title, message);
+
+    const panel = shell.querySelector("[data-system-notification]");
+    const kindBadge = shell.querySelector("[data-system-notification-kind]");
+    if (panel) {
+        panel.classList.remove("success", "error", "warning", "neutral");
+        panel.classList.add(tone);
+        setText(shell.querySelector("[data-system-notification-title]"), title);
+        setText(shell.querySelector("[data-system-notification-message]"), message);
+        setText(kindBadge, label);
+        setPillTone(kindBadge, options.kindTone || tone);
+        setText(
+            shell.querySelector("[data-system-notification-meta]"),
+            options.clearMeta ? "" : options.meta || "",
+        );
+    }
+
+    if (options.summaryLabel) {
+        updateResultsSummaryState(
+            shell.querySelector("[data-runner-results-summary]"),
+            options.summaryTone || tone,
+            options.summaryLabel,
+        );
+    }
+
+    if (options.statusLabel) {
+        updateRunnerStatus(shell, options.statusTone || (tone === "neutral" ? "ready" : tone), options.statusLabel);
+    }
+}
+
+function updateRunnerFeedbackCard(shell, tone, title, message) {
+    const feedback = shell.querySelector("[data-runner-feedback]");
+    if (!feedback) {
+        return;
+    }
+
+    feedback.classList.remove("correct", "incorrect");
+    if (tone === "success") {
+        feedback.classList.add("correct");
+    } else if (tone === "warning" || tone === "error") {
+        feedback.classList.add("incorrect");
+    }
+    setText(shell.querySelector("[data-runner-feedback-title]"), title);
+    setText(shell.querySelector("[data-runner-feedback-body]"), message);
+}
+
 function updateSystemNotification(shell, notification, activity) {
     const panel = shell.querySelector("[data-system-notification]");
     const kindBadge = shell.querySelector("[data-system-notification-kind]");
@@ -292,24 +586,25 @@ function updateSystemNotification(shell, notification, activity) {
         return;
     }
 
+    const defaults = getRunnerNotificationDefaults(shell);
     const level = notification.level || (activity.execution_status === "error" ? "error" : activity.validation_result === "correct" ? "success" : "warning");
     panel.classList.remove("success", "error", "warning", "neutral");
     panel.classList.add(level === "info" ? "neutral" : level);
 
     setText(
         shell.querySelector("[data-system-notification-title]"),
-        notification.title || "C# compiler feedback will appear here.",
+        notification.title || defaults.title,
     );
     setText(
         shell.querySelector("[data-system-notification-message]"),
-        notification.message || activity.explanation || "Compile the code to receive backend compiler feedback.",
+        notification.message || activity.explanation || defaults.message,
     );
     setText(
         kindBadge,
-        notification.label || formatNotificationKind(notification.kind || "csharp_compiler"),
+        notification.label || (notification.kind ? formatNotificationKind(notification.kind) : defaults.label),
     );
     setPillTone(kindBadge, level === "info" ? "neutral" : level);
-    setText(shell.querySelector("[data-system-notification-meta]"), buildNotificationMeta(notification, activity));
+    setText(shell.querySelector("[data-system-notification-meta]"), buildNotificationMeta(shell, notification, activity));
 }
 
 function updateResultsSummary(shell, activity, progress, notification) {
@@ -319,8 +614,16 @@ function updateResultsSummary(shell, activity, progress, notification) {
     }
 
     const state = deriveResultsSummary(activity, progress, notification);
-    setText(summary, state.label);
-    setPillTone(summary, state.tone);
+    updateResultsSummaryState(summary, state.tone, state.label);
+}
+
+function updateResultsSummaryState(summary, tone, label) {
+    if (!summary) {
+        return;
+    }
+
+    setText(summary, label);
+    setPillTone(summary, tone);
 }
 
 function updateConceptReview(shell, progress) {
@@ -337,11 +640,13 @@ function updateSystemDetailCard(shell, notification, activity) {
     const errors = String(activity.errors || "").trim();
     const output = String(activity.program_output || "").trim();
     const shouldShow = Boolean(detail) && detail !== errors && detail !== output;
+    const defaultCaption = shell?.dataset?.detailCaption || "Runner service output";
+    const environmentCaption = shell?.dataset?.environmentDetailCaption || "Runtime environment output";
 
     setText(shell.querySelector("[data-system-detail]"), shouldShow ? detail : "");
     setText(
         shell.querySelector("[data-system-detail-caption]"),
-        activity.details && activity.details.environment_issue ? "Compiler environment output" : "Compiler service output",
+        activity.details && activity.details.environment_issue ? environmentCaption : defaultCaption,
     );
     toggleVisibility(shell.querySelector("[data-system-detail-card]"), shouldShow);
 }
@@ -349,10 +654,10 @@ function updateSystemDetailCard(shell, notification, activity) {
 function updateRunnerTitles(shell, notification, activity) {
     const errorTitle = shell.querySelector("[data-runner-error-title]");
     if (errorTitle) {
-        let label = "Compiler Details";
+        let label = shell?.dataset?.defaultErrorTitle || "Runner Details";
         if (activity.details && activity.details.environment_issue) {
-            label = "Compiler Environment Details";
-        } else if ((notification.kind || "").includes("runtime")) {
+            label = shell?.dataset?.environmentErrorTitle || "Runtime Environment Details";
+        } else if ((notification.kind || "").includes("runtime") || (notification.kind || "").includes("timeout")) {
             label = "Runtime Error Details";
         }
         errorTitle.textContent = label;
@@ -376,10 +681,14 @@ function deriveRunnerStatus(activity, progress, notification = {}) {
     }
 
     if (activity.details && activity.details.environment_issue) {
-        return { tone: "error", label: "Compiler setup issue" };
+        return { tone: "error", label: "Setup issue" };
     }
 
     if (activity.execution_status === "error") {
+        if ((notification.kind || "").includes("timeout")) {
+            return { tone: "error", label: "Timed out" };
+        }
+
         if ((notification.kind || "").includes("compile")) {
             return { tone: "error", label: "Compilation error" };
         }
@@ -447,12 +756,13 @@ function updateLessonProgress(progress, nextLesson) {
     nextLessonSlot.appendChild(link);
 }
 
-function buildNotificationMeta(notification, activity) {
+function buildNotificationMeta(shell, notification, activity) {
     const location = notification.location || {};
     const details = activity.details || {};
+    const runnerFileName = shell?.dataset?.runnerFileName || "main.txt";
 
     if (location.line) {
-        return `${location.file || "Program.cs"} line ${location.line}, column ${location.column}`;
+        return `${location.file || runnerFileName} line ${location.line}, column ${location.column}`;
     }
 
     if (details.environment_issue) {
@@ -483,6 +793,11 @@ function formatNotificationKind(kind) {
         csharp_runtime_error: "Runtime error",
         csharp_success: "Run successful",
         csharp_validation_feedback: "Needs changes",
+        php_runtime_unavailable: "Setup issue",
+        php_timeout: "Timed out",
+        php_runtime_error: "Runtime error",
+        php_success: "Run successful",
+        php_validation_feedback: "Needs changes",
     };
     if (labels[kind]) {
         return labels[kind];
@@ -491,11 +806,12 @@ function formatNotificationKind(kind) {
     return String(kind || "")
         .replace(/_/g, " ")
         .replace(/\bcsharp\b/gi, "C#")
+        .replace(/\bphp\b/gi, "PHP")
         .replace(/\b\w/g, (character) => character.toUpperCase());
 }
 
 function maybeFocusCompilerResults(shell) {
-    if (window.innerWidth > 900 || !shell.querySelector("[data-csharp-compiler-shell]")) {
+    if (window.innerWidth > 900 || !shell.querySelector("[data-dedicated-runner-shell], [data-csharp-compiler-shell]")) {
         return;
     }
 
@@ -562,11 +878,9 @@ function hasMeaningfulRunnerResults(shell) {
         return false;
     }
 
+    const defaults = getRunnerNotificationDefaults(shell);
     const notificationTitle = shell.querySelector("[data-system-notification-title]")?.textContent?.trim() || "";
     const notificationMessage = shell.querySelector("[data-system-notification-message]")?.textContent?.trim() || "";
-    const defaultTitle = "C# compiler feedback will appear here.";
-    const defaultMessage =
-        "Use Run to compile the current C# program. The backend compiler service will generate the notification you see here.";
     const visibleOutput = shell.querySelector("[data-runner-output-card]:not([hidden])");
     const visibleErrors = shell.querySelector("[data-runner-error-card]:not([hidden])");
     const visibleDetail = shell.querySelector("[data-system-detail-card]:not([hidden])");
@@ -575,9 +889,17 @@ function hasMeaningfulRunnerResults(shell) {
         visibleOutput ||
             visibleErrors ||
             visibleDetail ||
-            notificationTitle !== defaultTitle ||
-            notificationMessage !== defaultMessage,
+            notificationTitle !== defaults.title ||
+            notificationMessage !== defaults.message,
     );
+}
+
+function getRunnerNotificationDefaults(shell) {
+    return {
+        title: shell?.dataset?.defaultNotificationTitle || "Code runner feedback will appear here.",
+        message: shell?.dataset?.defaultNotificationMessage || "Run the code to receive backend feedback.",
+        label: shell?.dataset?.defaultNotificationLabel || "Runner feedback",
+    };
 }
 
 function readStarterCode(starterCodeId) {
@@ -617,7 +939,7 @@ function setPillTone(element, tone) {
         return;
     }
 
-    element.classList.remove("neutral", "success", "warning", "error");
+    element.classList.remove("neutral", "running", "success", "warning", "error");
     element.classList.add(tone);
 }
 

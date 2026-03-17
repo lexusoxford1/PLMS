@@ -1,4 +1,5 @@
 from LMS.utils import build_course_outline, course_completion_percentage
+from courses.activity_config import get_effective_activity_language, uses_effective_code_runner
 
 
 def serialize_course(course, user=None):
@@ -18,8 +19,8 @@ def serialize_course(course, user=None):
                 "order": row["lesson"].order,
                 "accessible": row["accessible"],
                 "completed": bool(row["progress"] and row["progress"].completed_at),
-                "activity_language": row["lesson"].activity_language,
-                "uses_code_runner": row["lesson"].uses_code_runner,
+                "activity_language": get_effective_activity_language(row["lesson"]),
+                "uses_code_runner": uses_effective_code_runner(row["lesson"]),
             }
             for row in outline
         ],
@@ -43,7 +44,7 @@ def serialize_activity_submission(course, lesson, progress, result):
             "id": lesson.id,
             "slug": lesson.slug,
             "title": lesson.title,
-            "language": lesson.activity_language,
+            "language": get_effective_activity_language(lesson),
         },
         "activity": result.to_payload(),
         "progress": {

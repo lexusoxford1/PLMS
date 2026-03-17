@@ -68,6 +68,7 @@ def build_code_activity_validation(
     ignore_whitespace=True,
     min_output_lines=0,
     concept_review=None,
+    accept_alternative_solutions=False,
 ):
     return {
         "validator": "code_runner",
@@ -87,4 +88,5 @@ def build_code_activity_validation(
         "ignore_whitespace": ignore_whitespace,
         "min_output_lines": min_output_lines,
         "concept_review": concept_review or {},
+        "accept_alternative_solutions": accept_alternative_solutions,
     }

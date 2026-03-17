@@ -1,0 +1,63 @@
+<article
+    class="achievement-card{% if compact %} compact{% endif %}{% if featured %} featured{% endif %}"
+    data-badge-card
+    data-badge-state="{{ status|default:'locked' }}"
+    data-badge-theme="{{ badge.visual_spec.theme }}"
+    data-badge-pattern="{{ badge.visual_spec.pattern }}"
+    style="
+        --badge-primary: {{ badge.visual_spec.primary }};
+        --badge-secondary: {{ badge.visual_spec.secondary }};
+        --badge-accent: {{ badge.visual_spec.accent }};
+        --badge-surface: {{ badge.visual_spec.surface }};
+        --badge-ink: {{ badge.visual_spec.ink }};
+    "
+>
+    <div class="achievement-card__header">
+        <span class="achievement-card__stage">{{ badge.stage_label }}</span>
+        <span class="achievement-xp-pill">+ {{ xp_reward|default:badge.xp_reward }} XP</span>
+    </div>
+
+    <div class="achievement-card__visual">
+        <span class="achievement-card__mini-mark">
+            {% include "badges/_badge_icon.html" %}
+        </span>
+        <div class="achievement-medallion">
+            <span class="achievement-medallion__flare"></span>
+            <span class="achievement-medallion__halo"></span>
+            <div class="achievement-medallion__core">
+                <span class="achievement-medallion__icon">
+                    {% include "badges/_badge_icon.html" %}
+                </span>
+                <span class="achievement-medallion__glyph">{{ badge.visual_spec.glyph }}</span>
+            </div>
+            <span class="achievement-medallion__ribbon">{{ badge.visual_spec.accent_label }}</span>
+        </div>
+    </div>
+
+    <div class="achievement-card__body">
+        <h3>{{ badge.name }}</h3>
+        <p class="achievement-card__description">{{ badge.description }}</p>
+
+        {% if show_course and badge.course %}
+            <p class="achievement-card__course">{{ badge.course.title }}</p>
+        {% endif %}
+
+        {% if award %}
+            <p class="achievement-card__footnote">Unlocked {{ award.awarded_at|date:"M d, Y" }}</p>
+        {% elif helper_text %}
+            <p class="achievement-card__footnote">{{ helper_text }}</p>
+        {% endif %}
+    </div>
+
+    <div class="achievement-progress-block">
+        <div class="achievement-progress">
+            <span class="achievement-progress__fill" style="width: {{ progress_percent|default:100 }}%"></span>
+        </div>
+        <div class="achievement-progress__meta">
+            <span class="achievement-status achievement-status--{{ status|default:'locked' }}">
+                {{ status_label|default:"Locked" }}
+            </span>
+            <strong>{{ progress_text|default:"1/1" }}</strong>
+        </div>
+    </div>
+</article>

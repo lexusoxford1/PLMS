@@ -49,6 +49,40 @@ class ProgrammingCourseSeedTests(TestCase):
             all(lesson.activity_validation_rules.get("language") == "csharp" for lesson in csharp_course.lessons.all())
         )
 
+        python_course = Course.objects.get(slug="python-programming-foundations")
+        self.assertTrue(
+            all(lesson.activity_validation_rules.get("validator") == "code_runner" for lesson in python_course.lessons.all())
+        )
+        self.assertTrue(
+            all(lesson.activity_validation_rules.get("language") == "python" for lesson in python_course.lessons.all())
+        )
+        self.assertTrue(
+            all(
+                lesson.activity_title.startswith(f"Activity {lesson.order}:")
+                for lesson in python_course.lessons.order_by("order")
+            )
+        )
+
+        php_course = Course.objects.get(slug="php-programming-foundations")
+        self.assertTrue(
+            all(lesson.activity_validation_rules.get("validator") == "code_runner" for lesson in php_course.lessons.all())
+        )
+        self.assertTrue(
+            all(lesson.activity_validation_rules.get("language") == "php" for lesson in php_course.lessons.all())
+        )
+        self.assertTrue(
+            all(
+                lesson.activity_title.startswith(f"Activity {lesson.order}:")
+                for lesson in php_course.lessons.order_by("order")
+            )
+        )
+        self.assertTrue(
+            all(
+                lesson.activity_validation_rules.get("accept_alternative_solutions") is True
+                for lesson in php_course.lessons.all()
+            )
+        )
+
         call_command("seed_programming_courses")
         self.assertEqual(Course.objects.count(), 3)
         self.assertEqual(sum(course.lessons.count() for course in Course.objects.all()), 18)
@@ -237,6 +271,52 @@ class CodeRunnerActivityTests(TestCase):
         self.assertEqual(payload["notification"]["level"], "success")
         self.assertTrue(payload["progress"]["next_lesson_unlocked"])
 
+    def test_python_lessons_use_the_dedicated_python_runner_service(self):
+        lesson = Lesson.objects.create(
+            course=self.course,
+            title="Python Service Dispatch",
+            order=9,
+            summary="Dispatch through the dedicated Python runner.",
+            lecture_content="<p>Run code.</p>",
+            activity_title="Python service",
+            activity_instructions="<p>Print the expected greeting.</p>",
+            activity_validation_rules={
+                "validator": "code_runner",
+                "language": "python",
+                "expected_output": "Hello from Python",
+            },
+        )
+
+        sentinel = object()
+        with patch("courses.code_runner.validation.validate_python_activity_submission", return_value=sentinel) as mocked:
+            result = validate_activity_submission(lesson, 'print("Hello from Python")')
+
+        mocked.assert_called_once_with(lesson, 'print("Hello from Python")')
+        self.assertIs(result, sentinel)
+
+    def test_php_lessons_use_the_dedicated_php_runner_service(self):
+        lesson = Lesson.objects.create(
+            course=self.course,
+            title="PHP Service Dispatch",
+            order=10,
+            summary="Dispatch through the dedicated PHP runner.",
+            lecture_content="<p>Run code.</p>",
+            activity_title="PHP service",
+            activity_instructions="<p>Print the expected greeting.</p>",
+            activity_validation_rules={
+                "validator": "code_runner",
+                "language": "php",
+                "expected_output": "Hello from PHP",
+            },
+        )
+
+        sentinel = object()
+        with patch("courses.code_runner.validation.validate_php_activity_submission", return_value=sentinel) as mocked:
+            result = validate_activity_submission(lesson, "<?php\necho 'Hello from PHP';")
+
+        mocked.assert_called_once_with(lesson, "<?php\necho 'Hello from PHP';")
+        self.assertIs(result, sentinel)
+
     def test_php_and_csharp_lessons_use_the_code_runner_validation_path(self):
         language_expectations = {
             "php": ("<?php\necho 'Hello from PHP';", "Hello from PHP"),
@@ -269,7 +349,7 @@ class CodeRunnerActivityTests(TestCase):
                 patch_target = (
                     "courses.csharp_runner.service.compile_and_execute_csharp"
                     if language == "csharp"
-                    else "courses.code_runner.validation.execute_code"
+                    else "courses.php_runner.service.execute_code"
                 )
                 with patch(patch_target, return_value=mocked_result):
                     result = validate_activity_submission(lesson, response_text)
@@ -278,6 +358,80 @@ class CodeRunnerActivityTests(TestCase):
                 self.assertEqual(result.language, language)
                 self.assertTrue(result.used_code_runner)
                 self.assertEqual(result.validation_result, "correct")
+
+    def test_php_accepts_alternative_solution_structure_when_output_is_correct(self):
+        lesson = Lesson.objects.create(
+            course=self.course,
+            title="PHP Output-Focused Activity",
+            order=11,
+            summary="Accept different PHP solution styles.",
+            lecture_content="<p>Run code.</p>",
+            activity_title="PHP output-focused runner",
+            activity_instructions="<p>Print the expected greeting.</p>",
+            activity_validation_rules={
+                "validator": "code_runner",
+                "language": "php",
+                "expected_output_contains": ["Hello from PHP"],
+                "required_patterns": [
+                    {"pattern": r"\becho\b", "description": "echo statements", "count": 2},
+                ],
+                "accept_alternative_solutions": True,
+            },
+        )
+
+        mocked_result = CodeExecutionResult(
+            language="php",
+            execution_status="success",
+            program_output="Hello from PHP\n",
+            execution_time_ms=12,
+        )
+        with patch("courses.php_runner.service.execute_code", return_value=mocked_result):
+            result = validate_activity_submission(lesson, '<?php\nprint "Hello from PHP\\n";')
+
+        self.assertTrue(result.is_correct)
+        self.assertEqual(result.validation_result, "correct")
+        self.assertEqual(result.language, "php")
+
+    def test_legacy_php_variables_activity_accepts_br_separated_output(self):
+        legacy_course = Course.objects.create(
+            title="PHP Programming Foundations",
+            slug="php-programming-foundations",
+            description="Use seeded PHP runner rules for legacy lessons.",
+            overview="Render only.",
+        )
+        lesson = Lesson.objects.create(
+            course=legacy_course,
+            title="Variables and Data Types",
+            order=2,
+            slug="php-variables-and-data-types",
+            summary="Legacy PHP variables lesson.",
+            lecture_content="<p>Lecture content.</p>",
+            activity_title="Activity 2: Learner Profile Variables",
+            activity_instructions="<p>Create learner profile output.</p>",
+            activity_validation_rules={
+                "required_patterns": [
+                    {"pattern": r"\$favoriteFeature\b", "description": "the $favoriteFeature variable", "count": 1},
+                ],
+                "success_explanation": "Legacy rules.",
+                "failure_hint": "Legacy hint.",
+            },
+        )
+
+        mocked_result = CodeExecutionResult(
+            language="php",
+            execution_status="success",
+            program_output="Name: Lia<br>Age: 20<br>Favorite Language Feature: Loops",
+            execution_time_ms=12,
+        )
+        with patch("courses.php_runner.service.execute_code", return_value=mocked_result):
+            result = validate_activity_submission(
+                lesson,
+                '<?php\n$name = "Lia";\n$age = 20;\n$favoriteFeature = "Loops";\nprint "Name: " . $name;\nprint "<br>";\nprint "Age: " . $age;\nprint "<br>";\nprint "Favorite Language Feature: " . $favoriteFeature;',
+            )
+
+        self.assertTrue(result.is_correct)
+        self.assertEqual(result.validation_result, "correct")
+        self.assertEqual(result.language, "php")
 
     def test_csharp_blocked_construct_is_rejected_before_execution(self):
         lesson = Lesson.objects.create(
@@ -402,10 +556,228 @@ class CodeRunnerActivityTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Dedicated C# Compiler")
-        self.assertContains(response, "Compile and Run")
+        self.assertContains(response, "Run Code")
         self.assertContains(response, "Quick Start")
         self.assertContains(response, "Reset Editor")
-        self.assertContains(response, "View Results")
+        self.assertNotContains(response, "View Results")
+
+    def test_python_lesson_detail_renders_dedicated_runner_workspace(self):
+        render_course = Course.objects.create(
+            title="Python UI Course",
+            description="Render the dedicated Python runner UI.",
+            overview="Render only.",
+        )
+        Enrollment.objects.create(user=self.user, course=render_course)
+        lesson = Lesson.objects.create(
+            course=render_course,
+            title="Python Lesson UI",
+            order=1,
+            slug="python-lesson-ui",
+            summary="Render the Python runner page.",
+            lecture_content="<p>Lecture content.</p>",
+            activity_title="Python Workspace",
+            activity_instructions="<p>Run your code.</p>",
+            activity_validation_rules={
+                "validator": "code_runner",
+                "language": "python",
+                "starter_code": 'print("Hello, Python")',
+            },
+        )
+
+        response = self.client.get(reverse("lesson_detail", args=[render_course.slug, lesson.slug]))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Dedicated Python Compiler")
+        self.assertContains(response, "Run Code")
+        self.assertContains(response, "Compiler")
+        self.assertContains(response, "Quick Start")
+        self.assertContains(response, "Reset Editor")
+        self.assertNotContains(response, "View Results")
+        self.assertContains(response, "main.py")
+
+    def test_php_lesson_detail_renders_dedicated_runner_workspace(self):
+        render_course = Course.objects.create(
+            title="PHP UI Course",
+            description="Render the dedicated PHP runner UI.",
+            overview="Render only.",
+        )
+        Enrollment.objects.create(user=self.user, course=render_course)
+        lesson = Lesson.objects.create(
+            course=render_course,
+            title="PHP Lesson UI",
+            order=1,
+            slug="php-lesson-ui",
+            summary="Render the PHP runner page.",
+            lecture_content="<p>Lecture content.</p>",
+            activity_title="PHP Workspace",
+            activity_instructions="<p>Run your code.</p>",
+            activity_validation_rules={
+                "validator": "code_runner",
+                "language": "php",
+                "starter_code": '<?php\necho "Hello, PHP";',
+            },
+        )
+
+        response = self.client.get(reverse("lesson_detail", args=[render_course.slug, lesson.slug]))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Dedicated PHP Compiler")
+        self.assertContains(response, "Run Code")
+        self.assertContains(response, "Compiler")
+        self.assertContains(response, "Quick Start")
+        self.assertContains(response, "Reset Editor")
+        self.assertNotContains(response, "View Results")
+        self.assertContains(response, "main.php")
+
+    def test_legacy_python_activity_still_renders_dedicated_compiler_workspace(self):
+        render_course = Course.objects.create(
+            title="Python Programming Foundations",
+            slug="python-programming-foundations",
+            description="Render the Python compiler UI from legacy lesson data.",
+            overview="Render only.",
+        )
+        Enrollment.objects.create(user=self.user, course=render_course)
+        lesson = Lesson.objects.create(
+            course=render_course,
+            title="Getting Started with Python",
+            order=1,
+            slug="getting-started-with-python",
+            summary="Render the Python compiler page from old saved rules.",
+            lecture_content="<p>Lecture content.</p>",
+            activity_title="Activity 1: Friendly Program Output",
+            activity_instructions="<p>Write a short Python program.</p>",
+            activity_validation_rules={
+                "required_patterns": [
+                    {"pattern": r"\bprint\s*\(", "description": "three print() statements", "count": 3},
+                ],
+                "success_explanation": "Legacy rules.",
+                "failure_hint": "Legacy hint.",
+            },
+        )
+
+        response = self.client.get(reverse("lesson_detail", args=[render_course.slug, lesson.slug]))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Dedicated Python Compiler")
+        self.assertContains(response, "main.py")
+        self.assertContains(response, "# Write your print() statements below")
+        self.assertContains(response, "Run Code")
+
+    def test_legacy_php_activity_still_renders_dedicated_compiler_workspace(self):
+        render_course = Course.objects.create(
+            title="PHP Programming Foundations",
+            slug="php-programming-foundations",
+            description="Render the PHP compiler UI from legacy lesson data.",
+            overview="Render only.",
+        )
+        Enrollment.objects.create(user=self.user, course=render_course)
+        lesson = Lesson.objects.create(
+            course=render_course,
+            title="Getting Started with PHP",
+            order=1,
+            slug="getting-started-with-php",
+            summary="Render the PHP compiler page from old saved rules.",
+            lecture_content="<p>Lecture content.</p>",
+            activity_title="Activity 1: Basic PHP Output",
+            activity_instructions="<p>Write a short PHP program.</p>",
+            activity_validation_rules={
+                "required_patterns": [
+                    {"pattern": r"\becho\b", "description": "three echo statements", "count": 3},
+                ],
+                "success_explanation": "Legacy rules.",
+                "failure_hint": "Legacy hint.",
+            },
+        )
+
+        response = self.client.get(reverse("lesson_detail", args=[render_course.slug, lesson.slug]))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Dedicated PHP Compiler")
+        self.assertContains(response, "main.php")
+        self.assertContains(response, "// Write your echo statements here")
+        self.assertContains(response, "Run Code")
+
+    def test_legacy_python_activity_uses_effective_runner_rules_when_submitting_code(self):
+        legacy_course = Course.objects.create(
+            title="Python Programming Foundations",
+            slug="python-programming-foundations",
+            description="Use seeded Python runner rules for legacy lessons.",
+            overview="Render only.",
+        )
+        lesson = Lesson.objects.create(
+            course=legacy_course,
+            title="Getting Started with Python",
+            order=1,
+            slug="getting-started-with-python",
+            summary="Legacy Python lesson.",
+            lecture_content="<p>Lecture content.</p>",
+            activity_title="Activity 1: Friendly Program Output",
+            activity_instructions="<p>Write a short Python program.</p>",
+            activity_validation_rules={
+                "required_patterns": [
+                    {"pattern": r"\bprint\s*\(", "description": "three print() statements", "count": 3},
+                ],
+                "success_explanation": "Legacy rules.",
+                "failure_hint": "Legacy hint.",
+            },
+        )
+
+        mocked_result = CodeExecutionResult(
+            language="python",
+            execution_status="success",
+            program_output="Ada\nI am learning Python\nKeep going\n",
+            execution_time_ms=12,
+        )
+        with patch("courses.python_runner.service.execute_code", return_value=mocked_result):
+            result = validate_activity_submission(
+                lesson,
+                'print("Ada")\nprint("I am learning Python")\nprint("Keep going")',
+            )
+
+        self.assertTrue(result.is_correct)
+        self.assertEqual(result.language, "python")
+        self.assertNotIn("supported language configuration", result.explanation.lower())
+
+    def test_legacy_php_activity_uses_effective_runner_rules_when_submitting_code(self):
+        legacy_course = Course.objects.create(
+            title="PHP Programming Foundations",
+            slug="php-programming-foundations",
+            description="Use seeded PHP runner rules for legacy lessons.",
+            overview="Render only.",
+        )
+        lesson = Lesson.objects.create(
+            course=legacy_course,
+            title="Getting Started with PHP",
+            order=1,
+            slug="getting-started-with-php",
+            summary="Legacy PHP lesson.",
+            lecture_content="<p>Lecture content.</p>",
+            activity_title="Activity 1: Basic PHP Output",
+            activity_instructions="<p>Write a short PHP program.</p>",
+            activity_validation_rules={
+                "required_patterns": [
+                    {"pattern": r"\becho\b", "description": "three echo statements", "count": 3},
+                ],
+                "success_explanation": "Legacy rules.",
+                "failure_hint": "Legacy hint.",
+            },
+        )
+
+        mocked_result = CodeExecutionResult(
+            language="php",
+            execution_status="success",
+            program_output="Ada\nI am learning PHP\nKeep going\n",
+            execution_time_ms=12,
+        )
+        with patch("courses.php_runner.service.execute_code", return_value=mocked_result):
+            result = validate_activity_submission(
+                lesson,
+                '<?php\nprint "Ada\\nI am learning PHP\\nKeep going\\n";',
+            )
+
+        self.assertTrue(result.is_correct)
+        self.assertEqual(result.language, "php")
+        self.assertNotIn("supported language configuration", result.explanation.lower())
 
     def test_build_activity_concept_review_returns_result_evaluator_review(self):
         lesson = Lesson(
@@ -528,7 +900,7 @@ class CodeRunnerActivityTests(TestCase):
         self.assertEqual(completed_response.status_code, 200)
         self.assertIn("data-runner-concept-review", completed_content)
         self.assertNotRegex(completed_content, r"data-runner-concept-review[^>]*hidden")
-        self.assertIn("Practice output.", completed_content)
+        self.assertIn("Run deterministic Python code.", completed_content)
 
     def test_minimal_env_redirects_runner_profile_to_workspace(self):
         execution_root = Path(settings.BASE_DIR) / ".test_code_runner"
