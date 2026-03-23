@@ -1,9 +1,9 @@
 from decimal import Decimal
 
 from django.contrib import messages
-from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
 
+from LMS.permissions import learner_required
 from LMS.utils import can_access_lesson, get_or_create_lesson_progress
 from certificates.models import Certificate
 
@@ -29,7 +29,7 @@ def grade_quiz(quiz, cleaned_data):
     return score, score >= quiz.passing_score, submitted_answers
 
 
-@login_required
+@learner_required
 def quiz_detail(request, quiz_id):
     quiz = get_object_or_404(
         Quiz.objects.select_related("lesson", "lesson__course"),

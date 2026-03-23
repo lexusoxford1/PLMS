@@ -106,3 +106,25 @@ class ProfileDashboardTests(TestCase):
 
         follow_up = self.client.get(reverse("profile"))
         self.assertEqual(follow_up.status_code, 200)
+
+
+class RegistrationTests(TestCase):
+    def test_register_view_logs_in_new_learner_with_explicit_backend(self):
+        response = self.client.post(
+            reverse("register"),
+            {
+                "username": "freshlearner",
+                "first_name": "Fresh",
+                "last_name": "Learner",
+                "email": "fresh@example.com",
+                "password1": "StrongPass123!",
+                "password2": "StrongPass123!",
+            },
+        )
+
+        self.assertRedirects(response, reverse("dashboard"))
+        user = get_user_model().objects.get(username="freshlearner")
+        self.assertEqual(int(self.client.session["_auth_user_id"]), user.id)
+        self.assertEqual(user.role, user.LEARNER)
+        self.assertFalse(user.is_staff)
+        self.assertFalse(user.is_superuser)

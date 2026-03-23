@@ -13,33 +13,27 @@
             {{ form.as_p }}
             <button type="submit" class="button">Login</button>
         </form>
-        <p class="muted">No account yet? <a href="{% url 'register' %}">Create one here</a>.</p>
+        <p class="muted">Learner accounts use the dedicated registration flow. Admin accounts are created manually by the system or a superuser.</p>
     </article>
 
     <article class="card">
-        <h2>Social Sign-in</h2>
-        <p class="muted">Use Google or GitHub to create or access your PLMS learner profile.</p>
+        <h2>Social Access</h2>
+        <p class="muted">Social account creation is only available from the learner registration page. Admin accounts are never created here.</p>
         <div class="stack-form">
             {% if social_providers.google.enabled %}
-                <form method="post" action="{% provider_login_url 'google' process='login' %}" class="stack-form">
-                    {% csrf_token %}
-                    <button type="submit" class="button google-button">Sign in with Google</button>
-                </form>
+                <p class="muted">Google learner registration is available from the dedicated registration page.</p>
             {% else %}
                 <p class="muted">
-                    Google sign-in is not active yet. Add both GOOGLE_CLIENT_ID and
+                    Google access is not active yet. Add both GOOGLE_CLIENT_ID and
                     GOOGLE_CLIENT_SECRET to your environment first.
                 </p>
             {% endif %}
 
             {% if social_providers.github.enabled %}
-                <form method="post" action="{% provider_login_url 'github' process='login' %}" class="stack-form">
-                    {% csrf_token %}
-                    <button type="submit" class="button github-button">Sign in with GitHub</button>
-                </form>
+                <p class="muted">GitHub learner registration is available from the dedicated registration page.</p>
             {% else %}
                 <p class="muted">
-                    GitHub sign-in is not active yet. Add both GITHUB_CLIENT_ID and
+                    GitHub access is not active yet. Add both GITHUB_CLIENT_ID and
                     GITHUB_CLIENT_SECRET to your environment first.
                 </p>
             {% endif %}

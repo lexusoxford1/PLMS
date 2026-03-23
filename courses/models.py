@@ -17,6 +17,18 @@ def generate_unique_slug(model_cls, value, *, pk=None, queryset=None):
 
 
 class Course(models.Model):
+    CATEGORY_CSHARP = "csharp"
+    CATEGORY_PYTHON = "python"
+    CATEGORY_PHP = "php"
+    CATEGORY_GENERAL = "general"
+
+    CATEGORY_CHOICES = (
+        (CATEGORY_CSHARP, "C#"),
+        (CATEGORY_PYTHON, "Python"),
+        (CATEGORY_PHP, "PHP"),
+        (CATEGORY_GENERAL, "General Programming"),
+    )
+
     BEGINNER = "beginner"
     INTERMEDIATE = "intermediate"
     ADVANCED = "advanced"
@@ -30,6 +42,7 @@ class Course(models.Model):
     title = models.CharField(max_length=200)
     slug = models.SlugField(max_length=220, unique=True, blank=True)
     description = models.TextField()
+    category = models.CharField(max_length=30, choices=CATEGORY_CHOICES, default=CATEGORY_GENERAL)
     overview = models.TextField(blank=True)
     difficulty = models.CharField(max_length=20, choices=DIFFICULTY_CHOICES, default=BEGINNER)
     estimated_hours = models.PositiveIntegerField(default=1)
@@ -66,6 +79,7 @@ class Lesson(models.Model):
     slug = models.SlugField(max_length=220, blank=True)
     order = models.PositiveIntegerField(default=1)
     summary = models.TextField(blank=True)
+    image = models.ImageField(upload_to="lesson_images/", blank=True, null=True)
     lecture_content = models.TextField()
     activity_title = models.CharField(max_length=200, blank=True)
     activity_instructions = models.TextField(blank=True)
@@ -124,6 +138,34 @@ class Lesson(models.Model):
 
     def __str__(self):
         return f"{self.course.title} - Lesson {self.order}: {self.title}"
+
+
+class LearningMaterial(models.Model):
+    MATERIAL_DOCUMENT = "document"
+    MATERIAL_IMAGE = "image"
+    MATERIAL_ARCHIVE = "archive"
+    MATERIAL_OTHER = "other"
+
+    MATERIAL_TYPE_CHOICES = (
+        (MATERIAL_DOCUMENT, "Document"),
+        (MATERIAL_IMAGE, "Image"),
+        (MATERIAL_ARCHIVE, "Archive"),
+        (MATERIAL_OTHER, "Other"),
+    )
+
+    lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE, related_name="materials")
+    title = models.CharField(max_length=200)
+    description = models.TextField(blank=True)
+    file = models.FileField(upload_to="lesson_materials/")
+    material_type = models.CharField(max_length=20, choices=MATERIAL_TYPE_CHOICES, default=MATERIAL_DOCUMENT)
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["lesson__course", "lesson__order", "title"]
+
+    def __str__(self):
+        return f"{self.lesson} - {self.title}"
 
 
 class Enrollment(models.Model):

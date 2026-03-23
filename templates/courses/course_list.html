@@ -116,7 +116,7 @@
             </div>
 
             <div class="course-catalog-card__footer">
-                <a class="course-catalog-card__cta" href="{% url 'course_detail' row.course.slug %}">
+                <a class="course-catalog-card__cta" href="{% if is_admin_viewer %}{% url 'adminpanel:courses' %}{% else %}{% url 'course_detail' row.course.slug %}{% endif %}">
                     <span>{{ row.cta_label }}</span>
                     <svg viewBox="0 0 24 24" aria-hidden="true">
                         <path d="M5 12h14"></path>
@@ -124,7 +124,9 @@
                     </svg>
                 </a>
                 <span class="course-catalog-card__footer-note">
-                    {% if row.is_enrolled %}
+                    {% if is_admin_viewer %}
+                        Use the admin panel to update content and monitor learners.
+                    {% elif row.is_enrolled %}
                         Enrolled and ready to continue
                     {% elif request.user.is_authenticated %}
                         Open the syllabus and milestones

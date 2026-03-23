@@ -39,6 +39,16 @@ class PLMSSocialAccountAdapter(DefaultSocialAccountAdapter):
         user = super().save_user(request, sociallogin, form=form)
         update_fields = []
 
+        if user.role != User.LEARNER:
+            user.role = User.LEARNER
+            update_fields.append("role")
+        if user.is_staff:
+            user.is_staff = False
+            update_fields.append("is_staff")
+        if user.is_superuser:
+            user.is_superuser = False
+            update_fields.append("is_superuser")
+
         if getattr(user, "auth_provider", "") != sociallogin.account.provider:
             user.auth_provider = sociallogin.account.provider
             update_fields.append("auth_provider")

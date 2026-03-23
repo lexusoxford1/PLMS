@@ -1,4 +1,3 @@
-from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import TemplateView
 
 from badges.models import UserBadge
@@ -14,6 +13,7 @@ from certificates.models import Certificate
 from courses.models import Course, Enrollment
 from quizzes.models import QuizAttempt
 
+from .permissions import LearnerRequiredMixin, is_admin_account
 from .utils import build_course_outline, course_completion_percentage
 
 
@@ -65,7 +65,8 @@ class HomeView(TemplateView):
         published_courses = list(Course.objects.filter(is_published=True).prefetch_related("lessons"))
         featured_courses = published_courses[:6]
         enrolled_course_ids = set()
-        if self.request.user.is_authenticated:
+        is_admin_viewer = is_admin_account(self.request.user)
+        if self.request.user.is_authenticated and not is_admin_viewer:
             enrolled_course_ids = set(
                 Enrollment.objects.filter(user=self.request.user, course__in=featured_courses).values_list("course_id", flat=True)
             )
@@ -75,7 +76,11 @@ class HomeView(TemplateView):
             lesson_count = sum(1 for lesson in course.lessons.all() if lesson.is_published)
             progress_percent = course_completion_percentage(self.request.user, course)
             is_enrolled = course.id in enrolled_course_ids
-            if progress_percent >= 100:
+            if is_admin_viewer:
+                cta_label = "Open Admin Panel"
+                status_label = "Admin view"
+                progress_note = "Manage course content and learner activity from the admin workspace."
+            elif progress_percent >= 100:
                 cta_label = "Review Course"
                 status_label = "Certificate ready"
                 progress_note = "Finished and ready to revisit"
@@ -112,10 +117,11 @@ class HomeView(TemplateView):
             sum(1 for lesson in course.lessons.all() if lesson.is_published) for course in published_courses
         )
         context["published_hours"] = sum(course.estimated_hours for course in published_courses)
+        context["is_admin_viewer"] = is_admin_viewer
         return context
 
 
-class DashboardView(LoginRequiredMixin, TemplateView):
+class DashboardView(LearnerRequiredMixin, TemplateView):
     template_name = "LMS/dashboard.html"
 
     def get_context_data(self, **kwargs):
@@ -173,10 +179,6 @@ class DashboardView(LoginRequiredMixin, TemplateView):
         )
         context["completed_milestone_count"] = sum(
             1 for item in context["platform_badges"] if item["status"] == "earned"
-        )
-        context["featured_platform_badge"] = next(
-            (item for item in context["platform_badges"] if item["status"] != "earned"),
-            context["platform_badges"][0] if context["platform_badges"] else None,
         )
         certificates = list(Certificate.objects.filter(user=self.request.user).select_related("course"))
         context["certificates"] = certificates[:6]

@@ -1,0 +1,183 @@
+{% extends "adminpanel/base.html" %}
+
+{% block admin_content %}
+    <section class="admin-page" data-admin-screen="activities">
+        <div class="admin-workspace">
+            <section class="admin-card admin-card--list">
+                <div class="admin-card__header">
+                    <div>
+                        <p class="admin-card__eyebrow">Assessments</p>
+                        <h2>Activities and quizzes</h2>
+                    </div>
+                    <div class="admin-card__actions">
+                        <select data-activity-filter-course>
+                            <option value="">All courses</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="admin-list" data-activity-list></div>
+            </section>
+
+            <section class="admin-card admin-card--form">
+                <div class="admin-card__header">
+                    <div>
+                        <p class="admin-card__eyebrow">Assessment builder</p>
+                        <h2 data-activity-form-title>Select a lecture</h2>
+                    </div>
+                </div>
+                <div class="admin-feedback" data-activity-feedback hidden></div>
+                <form data-activity-form class="admin-form">
+                    <input type="hidden" name="lecture_id">
+
+                    <div class="admin-form-section">
+                        <div class="admin-form-section__header">
+                            <h3>Coding activity</h3>
+                            <span class="admin-chip">Validation-ready</span>
+                        </div>
+                        <div class="admin-form-grid">
+                            <label class="admin-form-grid__full">
+                                <span>Activity title</span>
+                                <input type="text" name="activity_title">
+                            </label>
+                            <label class="admin-form-grid__full">
+                                <span>Instructions</span>
+                                <textarea name="activity_instructions" rows="4"></textarea>
+                            </label>
+                            <label class="admin-form-grid__full">
+                                <span>Hint</span>
+                                <textarea name="activity_hint" rows="2"></textarea>
+                            </label>
+                            <label>
+                                <span>Validator type</span>
+                                <select name="validator_type" data-validator-type>
+                                    <option value="pattern">Pattern matching</option>
+                                    <option value="code_runner">Code runner</option>
+                                </select>
+                            </label>
+                            <label data-code-runner-field>
+                                <span>Language</span>
+                                <select name="language">
+                                    <option value="">Select language</option>
+                                    <option value="python">Python</option>
+                                    <option value="php">PHP</option>
+                                    <option value="csharp">C#</option>
+                                </select>
+                            </label>
+                            <label class="admin-form-grid__full" data-code-runner-field>
+                                <span>Starter code</span>
+                                <textarea name="starter_code" rows="6"></textarea>
+                            </label>
+                            <label class="admin-form-grid__full" data-code-runner-field>
+                                <span>Expected exact output</span>
+                                <textarea name="expected_output" rows="3"></textarea>
+                            </label>
+                            <label class="admin-form-grid__full" data-code-runner-field>
+                                <span>Expected output contains</span>
+                                <textarea name="expected_output_contains_text" rows="3" placeholder="One expected fragment per line"></textarea>
+                            </label>
+                            <label data-code-runner-field>
+                                <span>Output comparison</span>
+                                <select name="output_comparison">
+                                    <option value="exact">Exact</option>
+                                    <option value="contains">Contains</option>
+                                </select>
+                            </label>
+                            <label data-code-runner-field>
+                                <span>Timeout (seconds)</span>
+                                <input type="number" min="1" name="timeout_seconds" value="5">
+                            </label>
+                            <label data-code-runner-field class="admin-toggle">
+                                <input type="checkbox" name="ignore_whitespace" checked>
+                                <span>Ignore whitespace differences</span>
+                            </label>
+                            <label data-code-runner-field class="admin-toggle">
+                                <input type="checkbox" name="ignore_case">
+                                <span>Ignore output casing</span>
+                            </label>
+                            <label data-code-runner-field class="admin-toggle">
+                                <input type="checkbox" name="accept_alternative_solutions">
+                                <span>Allow alternative code structure when output is correct</span>
+                            </label>
+                            <label data-code-runner-field>
+                                <span>Minimum output lines</span>
+                                <input type="number" min="0" name="min_output_lines" value="0">
+                            </label>
+                        </div>
+
+                        <div class="admin-builder">
+                            <div class="admin-builder__section">
+                                <div class="admin-builder__header">
+                                    <h4>Required patterns</h4>
+                                    <button type="button" class="admin-button admin-button--ghost" data-action="add-required-rule">Add rule</button>
+                                </div>
+                                <div data-required-rules></div>
+                            </div>
+                            <div class="admin-builder__section">
+                                <div class="admin-builder__header">
+                                    <h4>Forbidden patterns</h4>
+                                    <button type="button" class="admin-button admin-button--ghost" data-action="add-forbidden-rule">Add rule</button>
+                                </div>
+                                <div data-forbidden-rules></div>
+                            </div>
+                        </div>
+
+                        <div class="admin-form-grid">
+                            <label class="admin-form-grid__full">
+                                <span>Success explanation</span>
+                                <textarea name="success_explanation" rows="2"></textarea>
+                            </label>
+                            <label class="admin-form-grid__full">
+                                <span>Failure hint</span>
+                                <textarea name="failure_hint" rows="2"></textarea>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="admin-form-section">
+                        <div class="admin-form-section__header">
+                            <h3>Quiz builder</h3>
+                            <label class="admin-toggle">
+                                <input type="checkbox" name="quiz_enabled" data-quiz-toggle>
+                                <span>Enable quiz for this lecture</span>
+                            </label>
+                        </div>
+                        <div data-quiz-fields hidden>
+                            <div class="admin-form-grid">
+                                <label class="admin-form-grid__full">
+                                    <span>Quiz title</span>
+                                    <input type="text" name="quiz_title">
+                                </label>
+                                <label class="admin-form-grid__full">
+                                    <span>Instructions</span>
+                                    <textarea name="quiz_instructions" rows="3"></textarea>
+                                </label>
+                                <label>
+                                    <span>Passing score</span>
+                                    <input type="number" min="1" max="100" name="quiz_passing_score" value="70">
+                                </label>
+                                <label>
+                                    <span>Max attempts</span>
+                                    <input type="number" min="0" name="quiz_max_attempts" value="0">
+                                </label>
+                                <label class="admin-toggle">
+                                    <input type="checkbox" name="quiz_is_published" checked>
+                                    <span>Quiz is published</span>
+                                </label>
+                            </div>
+
+                            <div class="admin-builder__header admin-builder__header--spaced">
+                                <h4>Questions</h4>
+                                <button type="button" class="admin-button admin-button--ghost" data-action="add-question">Add question</button>
+                            </div>
+                            <div data-question-list></div>
+                        </div>
+                    </div>
+
+                    <div class="admin-form__footer">
+                        <button type="submit" class="admin-button">Save assessment</button>
+                    </div>
+                </form>
+            </section>
+        </div>
+    </section>
+{% endblock %}

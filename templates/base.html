@@ -7,51 +7,366 @@
     <title>{% block title %}PLMS{% endblock %}</title>
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
 </head>
-<body>
-    <header class="site-header">
-        <div class="container nav-shell">
-            <a class="brand" href="{% url 'home' %}">PLMS</a>
-            <nav class="site-nav">
-                <a href="{% url 'course_list' %}">Courses</a>
-                {% if request.user.is_authenticated %}
-                    {% if user_achievement_summary %}
-                        <span class="nav-level-pill">Lv {{ user_achievement_summary.level }} - {{ user_achievement_summary.total_xp }} XP</span>
-                    {% endif %}
-                    <a href="{% url 'dashboard' %}">Dashboard</a>
-                    <a href="{% url 'badge_list' %}">Badges</a>
-                    <a href="{% url 'certificate_list' %}">Certificates</a>
-                    <a href="{% url 'profile' %}">Profile</a>
-                    <form class="inline-form" action="{% url 'logout' %}" method="post">
-                        {% csrf_token %}
-                        <button type="submit" class="link-button">Logout</button>
-                    </form>
-                {% else %}
-                    <a href="{% url 'login' %}">Login</a>
-                    <a class="button compact" href="{% url 'register' %}">Register</a>
-                {% endif %}
-            </nav>
-        </div>
-    </header>
-
-    <section class="toast-stack" data-toast-stack aria-live="polite" aria-atomic="true">
-        {% if messages %}
-            {% for message in messages %}
-                <div class="toast {{ message.tags|default:'info' }}" data-toast>
-                    <div class="toast-content">
-                        <strong class="toast-title">{{ message.tags|default:"notice"|title }}</strong>
-                        <p>{{ message }}</p>
+<body class="{% if request.user.is_authenticated and not request.user.is_superuser and not request.user.is_staff and request.user.role != 'admin' %}app-shell-body{% endif %}">
+    {% with current_url=request.resolver_match.url_name %}
+        {% if request.user.is_authenticated %}
+            {% if request.user.is_superuser or request.user.is_staff or request.user.role == 'admin' %}
+                <header class="site-header">
+                    <div class="container nav-shell">
+                        <a class="brand" href="{% if request.user.is_superuser %}{% url 'adminpanel:dashboard' %}{% else %}{% url 'home' %}{% endif %}">PLMS Admin</a>
+                        <nav class="site-nav">
+                            {% if request.user.is_superuser %}
+                                <a href="{% url 'adminpanel:dashboard' %}">Admin Panel</a>
+                            {% endif %}
+                            <a href="{% url 'home' %}">Public Home</a>
+                            <form action="{% url 'logout' %}" method="post">
+                                {% csrf_token %}
+                                <button type="submit" class="button compact">Logout</button>
+                            </form>
+                        </nav>
                     </div>
-                    <button type="button" class="toast-close" data-toast-close aria-label="Dismiss notification">
-                        &times;
-                    </button>
-                </div>
-            {% endfor %}
-        {% endif %}
-    </section>
+                </header>
+            {% else %}
+            <div class="app-shell" data-app-shell>
+                <button type="button" class="app-shell__overlay" data-app-sidebar-close aria-label="Close navigation"></button>
 
-    <main class="container page-shell {% block page_shell_class %}{% endblock %}">
-        {% block content %}{% endblock %}
-    </main>
+                <aside class="app-sidebar" id="app-sidebar" data-app-sidebar>
+                    <div class="app-sidebar__inner">
+                        <div class="app-sidebar__header">
+                            <a class="app-brand" href="{% url 'home' %}">
+                                <span class="app-brand__mark" aria-hidden="true">
+                                    <svg viewBox="0 0 24 24">
+                                        <path d="M12 3 4 7v10l8 4 8-4V7l-8-4Z"></path>
+                                        <path d="M8.5 10.5h7"></path>
+                                        <path d="M8.5 14h4.5"></path>
+                                    </svg>
+                                </span>
+                                <span class="app-brand__copy">
+                                    <strong>PLMS</strong>
+                                    <small>Learning hub</small>
+                                </span>
+                            </a>
+
+                            <div class="app-sidebar__controls">
+                                <button
+                                    type="button"
+                                    class="app-sidebar__compact-toggle"
+                                    data-app-nav-mode-toggle
+                                    aria-pressed="false"
+                                    aria-label="Switch to icon-only navigation"
+                                    title="Compact navigation"
+                                >
+                                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                                        <rect x="4" y="5" width="4" height="14" rx="1.5"></rect>
+                                        <path d="M11 7h9"></path>
+                                        <path d="M11 12h9"></path>
+                                        <path d="M11 17h9"></path>
+                                    </svg>
+                                </button>
+                                <button
+                                    type="button"
+                                    class="app-sidebar__close"
+                                    data-app-sidebar-close
+                                    aria-label="Close navigation"
+                                >
+                                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                                        <path d="m6 6 12 12"></path>
+                                        <path d="M18 6 6 18"></path>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="app-sidebar__scroll">
+                            <div class="app-sidebar__intro">
+                                <span class="app-sidebar__eyebrow">Focused learning</span>
+                                <p>Move through lessons, rewards, and certificates from one clear workspace.</p>
+                            </div>
+
+                            <nav class="app-nav" aria-label="Primary">
+                                <a
+                                    class="app-nav__item {% if current_url == 'course_list' or current_url == 'course_detail' or current_url == 'lesson_detail' or current_url == 'quiz_page' %}is-active{% endif %}"
+                                    href="{% url 'course_list' %}"
+                                    aria-label="Courses"
+                                    data-nav-label="Courses"
+                                    title="Courses"
+                                >
+                                    <span class="app-nav__icon" aria-hidden="true">
+                                        <svg viewBox="0 0 24 24">
+                                            <path d="M4 6.5A2.5 2.5 0 0 1 6.5 4H20v14H6.5A2.5 2.5 0 0 0 4 20.5v-14Z"></path>
+                                            <path d="M8 8h7"></path>
+                                            <path d="M8 12h8"></path>
+                                        </svg>
+                                    </span>
+                                    <span class="app-nav__copy">
+                                        <strong>Courses</strong>
+                                        <span>Browse tracks and continue lessons</span>
+                                    </span>
+                                </a>
+
+                                <a
+                                    class="app-nav__item {% if current_url == 'dashboard' %}is-active{% endif %}"
+                                    href="{% url 'dashboard' %}"
+                                    aria-label="Dashboard"
+                                    data-nav-label="Dashboard"
+                                    title="Dashboard"
+                                >
+                                    <span class="app-nav__icon" aria-hidden="true">
+                                        <svg viewBox="0 0 24 24">
+                                            <rect x="3" y="4" width="7" height="7" rx="2"></rect>
+                                            <rect x="14" y="4" width="7" height="5" rx="2"></rect>
+                                            <rect x="14" y="12" width="7" height="8" rx="2"></rect>
+                                            <rect x="3" y="14" width="7" height="6" rx="2"></rect>
+                                        </svg>
+                                    </span>
+                                    <span class="app-nav__copy">
+                                        <strong>Dashboard</strong>
+                                        <span>Track momentum and next milestones</span>
+                                    </span>
+                                </a>
+
+                                <a
+                                    class="app-nav__item {% if current_url == 'badge_list' %}is-active{% endif %}"
+                                    href="{% url 'badge_list' %}"
+                                    aria-label="Badges"
+                                    data-nav-label="Badges"
+                                    title="Badges"
+                                >
+                                    <span class="app-nav__icon" aria-hidden="true">
+                                        <svg viewBox="0 0 24 24">
+                                            <path d="M12 3 15 9l6 .8-4.4 4.3 1 6.1L12 17l-5.6 3.2 1-6.1L3 9.8 9 9l3-6Z"></path>
+                                        </svg>
+                                    </span>
+                                    <span class="app-nav__copy">
+                                        <strong>Badges</strong>
+                                        <span>See unlocked rewards and XP boosts</span>
+                                    </span>
+                                </a>
+
+                                <a
+                                    class="app-nav__item {% if current_url == 'certificate_list' or current_url == 'certificate_detail' %}is-active{% endif %}"
+                                    href="{% url 'certificate_list' %}"
+                                    aria-label="Certificates"
+                                    data-nav-label="Certificates"
+                                    title="Certificates"
+                                >
+                                    <span class="app-nav__icon" aria-hidden="true">
+                                        <svg viewBox="0 0 24 24">
+                                            <path d="M7 5h10a3 3 0 0 1 3 3v6a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3V8a3 3 0 0 1 3-3Z"></path>
+                                            <path d="M8 9h8"></path>
+                                            <path d="M8 13h5"></path>
+                                            <path d="m10 17-.5 4 2.5-1.5 2.5 1.5-.5-4"></path>
+                                        </svg>
+                                    </span>
+                                    <span class="app-nav__copy">
+                                        <strong>Certificates</strong>
+                                        <span>Review completions and exports</span>
+                                    </span>
+                                </a>
+
+                                <a
+                                    class="app-nav__item {% if current_url == 'profile' %}is-active{% endif %}"
+                                    href="{% url 'profile' %}"
+                                    aria-label="Profile"
+                                    data-nav-label="Profile"
+                                    title="Profile"
+                                >
+                                    <span class="app-nav__icon" aria-hidden="true">
+                                        <svg viewBox="0 0 24 24">
+                                            <path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z"></path>
+                                            <path d="M5 21a7 7 0 0 1 14 0"></path>
+                                        </svg>
+                                    </span>
+                                    <span class="app-nav__copy">
+                                        <strong>Profile</strong>
+                                        <span>Manage account details and settings</span>
+                                    </span>
+                                </a>
+                            </nav>
+
+                            <section class="app-sidebar__card" aria-label="Level summary">
+                                <span class="app-sidebar__card-label">Next level goal</span>
+                                <strong>Level {{ user_achievement_summary.level|default:1 }}</strong>
+                                <p>{{ user_achievement_summary.xp_to_next_level|default:120 }} XP to unlock Level {{ user_achievement_summary.next_level|default:2 }}.</p>
+                                <div class="app-sidebar__meter" aria-hidden="true">
+                                    <span style="width: {{ user_achievement_summary.progress_percent|default:0 }}%;"></span>
+                                </div>
+                            </section>
+
+                            <section class="app-sidebar__footer" aria-label="Account actions">
+                                <form action="{% url 'logout' %}" method="post">
+                                    {% csrf_token %}
+                                    <button type="submit" class="app-sidebar__logout">
+                                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                                            <path d="M15 3h3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-3"></path>
+                                            <path d="M10 17 15 12 10 7"></path>
+                                            <path d="M15 12H4"></path>
+                                        </svg>
+                                        <span>Logout</span>
+                                    </button>
+                                </form>
+                            </section>
+                        </div>
+                    </div>
+                </aside>
+
+                <div class="app-main">
+                    <header class="app-topbar">
+                        <div class="app-topbar__left">
+                            <button
+                                type="button"
+                                class="app-topbar__menu"
+                                data-app-sidebar-toggle
+                                aria-controls="app-sidebar"
+                                aria-expanded="false"
+                                aria-label="Open navigation"
+                            >
+                                <svg viewBox="0 0 24 24" aria-hidden="true">
+                                    <path d="M4 7h16"></path>
+                                    <path d="M4 12h16"></path>
+                                    <path d="M4 17h16"></path>
+                                </svg>
+                            </button>
+
+                            <div class="app-topbar__title">
+                                <span class="app-topbar__eyebrow">Learning workspace</span>
+                                <strong>
+                                    {% block app_topbar_title %}
+                                        {% if current_url == 'dashboard' %}
+                                            Dashboard
+                                        {% elif current_url == 'course_list' or current_url == 'course_detail' or current_url == 'lesson_detail' or current_url == 'quiz_page' %}
+                                            Courses
+                                        {% elif current_url == 'badge_list' %}
+                                            Badges
+                                        {% elif current_url == 'certificate_list' or current_url == 'certificate_detail' %}
+                                            Certificates
+                                        {% elif current_url == 'profile' %}
+                                            Profile
+                                        {% elif current_url == 'home' %}
+                                            Learning Home
+                                        {% else %}
+                                            Workspace
+                                        {% endif %}
+                                    {% endblock %}
+                                </strong>
+                            </div>
+                        </div>
+
+                        <div class="app-topbar__actions">
+                            <div class="app-xp-pill" style="--xp-progress: {{ user_achievement_summary.progress_percent|default:0 }}%;">
+                                <div class="app-xp-pill__head">
+                                    <span class="app-xp-pill__label">Level {{ user_achievement_summary.level|default:1 }}</span>
+                                    <strong>{{ user_achievement_summary.total_xp|default:0 }} XP</strong>
+                                </div>
+                                <span class="app-xp-pill__meta">
+                                    {{ user_achievement_summary.xp_to_next_level|default:120 }} XP to Level {{ user_achievement_summary.next_level|default:2 }}
+                                </span>
+                                <span class="app-xp-pill__meter" aria-hidden="true">
+                                    <span class="app-xp-pill__meter-fill"></span>
+                                </span>
+                            </div>
+
+                            <details class="app-user-menu" data-user-menu>
+                                <summary class="app-user-menu__trigger">
+                                    <span class="app-avatar" aria-hidden="true">
+                                        {% if request.user.profile_picture %}
+                                            <img src="{{ request.user.profile_picture.url }}" alt="{{ request.user.display_name }}">
+                                        {% else %}
+                                            <span>{{ request.user.initials }}</span>
+                                        {% endif %}
+                                    </span>
+                                    <span class="app-user-menu__summary-copy">
+                                        <strong>{{ request.user.display_name }}</strong>
+                                        <span>{{ request.user.profile_title }}</span>
+                                    </span>
+                                    <span class="app-user-menu__chevron" aria-hidden="true">
+                                        <svg viewBox="0 0 24 24">
+                                            <path d="m6 9 6 6 6-6"></path>
+                                        </svg>
+                                    </span>
+                                </summary>
+
+                                <div class="app-user-menu__panel">
+                                    <div class="app-user-menu__identity">
+                                        <span class="app-avatar app-avatar--large" aria-hidden="true">
+                                            {% if request.user.profile_picture %}
+                                                <img src="{{ request.user.profile_picture.url }}" alt="{{ request.user.display_name }}">
+                                            {% else %}
+                                                <span>{{ request.user.initials }}</span>
+                                            {% endif %}
+                                        </span>
+                                        <div>
+                                            <strong>{{ request.user.display_name }}</strong>
+                                            <span>{{ request.user.email|default:request.user.username }}</span>
+                                        </div>
+                                    </div>
+
+                                    <a class="app-user-menu__item" href="{% url 'profile' %}">
+                                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                                            <path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z"></path>
+                                            <path d="M5 21a7 7 0 0 1 14 0"></path>
+                                        </svg>
+                                        <span>Profile settings</span>
+                                    </a>
+
+                                    <form class="app-user-menu__form" action="{% url 'logout' %}" method="post">
+                                        {% csrf_token %}
+                                        <button type="submit" class="app-user-menu__item app-user-menu__item--danger">
+                                            <svg viewBox="0 0 24 24" aria-hidden="true">
+                                                <path d="M15 3h3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-3"></path>
+                                                <path d="M10 17 15 12 10 7"></path>
+                                                <path d="M15 12H4"></path>
+                                            </svg>
+                                            <span>Logout</span>
+                                        </button>
+                                    </form>
+                                </div>
+                            </details>
+                        </div>
+                    </header>
+            {% endif %}
+        {% else %}
+            <header class="site-header">
+                <div class="container nav-shell">
+                    <a class="brand" href="{% url 'home' %}">PLMS</a>
+                    <nav class="site-nav">
+                        <a href="{% url 'course_list' %}">Courses</a>
+                        {% if current_url != 'login' %}
+                            <a href="{% url 'login' %}">Login</a>
+                        {% endif %}
+                        {% if current_url != 'login' %}
+                            <a class="button compact" href="{% url 'register' %}">Register</a>
+                        {% endif %}
+                    </nav>
+                </div>
+            </header>
+        {% endif %}
+
+        <section class="toast-stack" data-toast-stack aria-live="polite" aria-atomic="true">
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="toast {{ message.tags|default:'info' }}" data-toast>
+                        <div class="toast-content">
+                            <strong class="toast-title">{{ message.tags|default:"notice"|title }}</strong>
+                            <p>{{ message }}</p>
+                        </div>
+                        <button type="button" class="toast-close" data-toast-close aria-label="Dismiss notification">
+                            &times;
+                        </button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        </section>
+
+        <main class="{% if request.user.is_authenticated and not request.user.is_superuser and not request.user.is_staff and request.user.role != 'admin' %}app-page {% endif %}container page-shell {% block page_shell_class %}{% endblock %}">
+            {% block content %}{% endblock %}
+        </main>
+
+        {% if request.user.is_authenticated and not request.user.is_superuser and not request.user.is_staff and request.user.role != 'admin' %}
+                </div>
+            </div>
+        {% endif %}
+    {% endwith %}
 
     {% include "badges/_badge_unlock_modal.html" %}
 

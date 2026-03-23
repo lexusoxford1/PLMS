@@ -1,8 +1,8 @@
 from django.contrib import messages
-from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
 
 from LMS.forms import ActivitySubmissionForm
+from LMS.permissions import is_admin_account, learner_required
 from LMS.utils import (
     award_course_completion,
     build_course_outline,
@@ -63,7 +63,8 @@ def _get_course_catalog_theme(course):
 def course_list(request):
     courses = list(Course.objects.filter(is_published=True).prefetch_related("lessons"))
     enrolled_course_ids = set()
-    if request.user.is_authenticated:
+    is_admin_viewer = is_admin_account(request.user)
+    if request.user.is_authenticated and not is_admin_viewer:
         enrolled_course_ids = set(
             Enrollment.objects.filter(user=request.user, course__in=courses).values_list("course_id", flat=True)
         )
@@ -73,7 +74,11 @@ def course_list(request):
         published_lessons = [lesson for lesson in course.lessons.all() if lesson.is_published]
         progress_percent = course_completion_percentage(request.user, course)
         is_enrolled = course.id in enrolled_course_ids
-        if progress_percent >= 100:
+        if is_admin_viewer:
+            status_label = "Admin view"
+            progress_note = "Manage this course from the admin workspace."
+            cta_label = "Manage Course"
+        elif progress_percent >= 100:
             status_label = "Completed"
             progress_note = "Certificate-ready track"
             cta_label = "Review Course"
@@ -111,11 +116,18 @@ def course_list(request):
         "course_count": len(course_cards),
         "catalog_hours": sum(course.estimated_hours for course in courses),
         "catalog_lessons": sum(card["lesson_count"] for card in course_cards),
+        "is_admin_viewer": is_admin_viewer,
     }
     return render(request, "courses/course_list.html", context)
 
 
 def course_detail(request, slug):
+    if is_admin_account(request.user):
+        messages.info(request, "Admin accounts manage courses from the Admin Panel instead of learner course pages.")
+        if request.user.is_superuser:
+            return redirect("adminpanel:courses")
+        return redirect("home")
+
     course = get_object_or_404(Course.objects.prefetch_related("lessons", "badges"), slug=slug, is_published=True)
     enrollment = None
     badge_awards = {}
@@ -157,7 +169,7 @@ def course_detail(request, slug):
     )
 
 
-@login_required
+@learner_required
 def enroll_course(request, slug):
     course = get_object_or_404(Course, slug=slug, is_published=True)
     enrollment, created = Enrollment.objects.get_or_create(user=request.user, course=course)
@@ -168,7 +180,7 @@ def enroll_course(request, slug):
     return redirect("course_detail", slug=course.slug)
 
 
-@login_required
+@learner_required
 def lesson_detail(request, course_slug, lesson_slug):
     course = get_object_or_404(Course, slug=course_slug, is_published=True)
     lesson = get_object_or_404(Lesson, course=course, slug=lesson_slug, is_published=True)
@@ -205,7 +217,7 @@ def lesson_detail(request, course_slug, lesson_slug):
     )
 
 
-@login_required
+@learner_required
 def mark_lecture_complete(request, course_slug, lesson_slug):
     course = get_object_or_404(Course, slug=course_slug, is_published=True)
     lesson = get_object_or_404(Lesson, course=course, slug=lesson_slug, is_published=True)
@@ -223,7 +235,7 @@ def mark_lecture_complete(request, course_slug, lesson_slug):
     return redirect("lesson_detail", course_slug=course.slug, lesson_slug=lesson.slug)
 
 
-@login_required
+@learner_required
 def submit_activity(request, course_slug, lesson_slug):
     course = get_object_or_404(Course, slug=course_slug, is_published=True)
     lesson = get_object_or_404(Lesson, course=course, slug=lesson_slug, is_published=True)

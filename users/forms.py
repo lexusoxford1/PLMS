@@ -16,7 +16,10 @@ class UserRegistrationForm(UserCreationForm):
 
     def save(self, commit=True):
         user = super().save(commit=False)
-        user.email = self.cleaned_data["email"]
+        user.email = self.cleaned_data["email"].strip().lower()
+        user.role = User.LEARNER
+        user.is_staff = False
+        user.is_superuser = False
         if commit:
             user.save()
         return user

@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Course, Enrollment, Lesson
+from .models import Course, Enrollment, LearningMaterial, Lesson
 
 
 class LessonInline(admin.TabularInline):
@@ -11,8 +11,8 @@ class LessonInline(admin.TabularInline):
 
 @admin.register(Course)
 class CourseAdmin(admin.ModelAdmin):
-    list_display = ("title", "difficulty", "estimated_hours", "is_published", "created_by")
-    list_filter = ("difficulty", "is_published")
+    list_display = ("title", "category", "difficulty", "estimated_hours", "is_published", "created_by")
+    list_filter = ("category", "difficulty", "is_published")
     prepopulated_fields = {"slug": ("title",)}
     search_fields = ("title", "description")
     inlines = [LessonInline]
@@ -31,3 +31,10 @@ class EnrollmentAdmin(admin.ModelAdmin):
     list_display = ("user", "course", "enrolled_at", "completed_at")
     list_filter = ("course",)
     search_fields = ("user__username", "course__title")
+
+
+@admin.register(LearningMaterial)
+class LearningMaterialAdmin(admin.ModelAdmin):
+    list_display = ("title", "lesson", "material_type", "uploaded_at")
+    list_filter = ("material_type", "lesson__course")
+    search_fields = ("title", "description", "lesson__title", "lesson__course__title")

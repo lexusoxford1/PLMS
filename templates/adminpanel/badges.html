@@ -1,0 +1,79 @@
+{% extends "adminpanel/base.html" %}
+
+{% block admin_content %}
+    <section class="admin-page" data-admin-screen="badges">
+        <div class="admin-workspace">
+            <section class="admin-card admin-card--list">
+                <div class="admin-card__header">
+                    <div>
+                        <p class="admin-card__eyebrow">Recognition design</p>
+                        <h2>Badges and XP rewards</h2>
+                    </div>
+                    <div class="admin-card__actions">
+                        <button type="button" class="admin-button admin-button--ghost" data-action="refresh-badges">Refresh</button>
+                        <button type="button" class="admin-button" data-action="new-badge">New badge</button>
+                    </div>
+                </div>
+                <div class="admin-list" data-badge-list></div>
+            </section>
+
+            <section class="admin-card admin-card--form">
+                <div class="admin-card__header">
+                    <div>
+                        <p class="admin-card__eyebrow">Badge editor</p>
+                        <h2 data-badge-form-title>New badge</h2>
+                    </div>
+                </div>
+                <div class="admin-feedback" data-badge-feedback hidden></div>
+                <form data-badge-form class="admin-form" enctype="multipart/form-data">
+                    <input type="hidden" name="badge_id">
+                    <div class="admin-form-grid">
+                        <label class="admin-form-grid__full">
+                            <span>Name</span>
+                            <input type="text" name="name" required>
+                        </label>
+                        <label class="admin-form-grid__full">
+                            <span>Description</span>
+                            <textarea name="description" rows="4"></textarea>
+                        </label>
+                        <label>
+                            <span>Course scope</span>
+                            <select name="course" data-badge-course-select>
+                                <option value="">Platform-wide</option>
+                            </select>
+                        </label>
+                        <label>
+                            <span>Award type</span>
+                            <select name="award_type">
+                                <option value="enrollment">Enrollment</option>
+                                <option value="completion">Completion</option>
+                                <option value="milestone">Milestone</option>
+                            </select>
+                        </label>
+                        <label>
+                            <span>XP reward</span>
+                            <input type="number" min="0" name="xp_reward" value="40" required>
+                        </label>
+                        <label>
+                            <span>Criteria key</span>
+                            <input type="text" name="criteria_key">
+                        </label>
+                        <label class="admin-form-grid__full">
+                            <span>Badge icon</span>
+                            <input type="file" name="icon" accept="image/*">
+                        </label>
+                        <label class="admin-toggle">
+                            <input type="checkbox" name="is_active" checked>
+                            <span>Badge is active</span>
+                        </label>
+                    </div>
+                    <div class="admin-form__footer">
+                        <button type="submit" class="admin-button">Save badge</button>
+                        <button type="button" class="admin-button admin-button--ghost" data-action="reset-badge">Clear</button>
+                        <button type="button" class="admin-button admin-button--danger" data-action="delete-badge" hidden>Delete</button>
+                    </div>
+                </form>
+            </section>
+        </div>
+    </section>
+{% endblock %}

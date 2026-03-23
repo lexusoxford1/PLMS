@@ -1,9 +1,9 @@
 import os
 
-from django.contrib.auth.decorators import login_required
 from django.http import FileResponse
 from django.shortcuts import get_object_or_404, render
 
+from LMS.permissions import learner_required
 from LMS.utils import course_completion_percentage
 from courses.models import Enrollment
 
@@ -11,7 +11,7 @@ from .models import Certificate
 from .presentation import build_certificate_view_model, build_certificate_preview_model, build_default_certificate_preview
 
 
-@login_required
+@learner_required
 def certificate_list(request):
     certificates = list(
         Certificate.objects.filter(user=request.user)
@@ -53,7 +53,7 @@ def certificate_list(request):
     )
 
 
-@login_required
+@learner_required
 def certificate_detail(request, pk):
     certificate = get_object_or_404(
         Certificate.objects.select_related("user", "course", "course__created_by", "badge"),
@@ -72,7 +72,7 @@ def certificate_detail(request, pk):
     )
 
 
-@login_required
+@learner_required
 def certificate_download(request, pk):
     certificate = get_object_or_404(
         Certificate.objects.select_related("user", "course", "course__created_by", "badge"),

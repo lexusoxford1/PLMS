@@ -1,0 +1,41 @@
+{% extends "adminpanel/base.html" %}
+
+{% block admin_content %}
+    <section class="admin-page" data-admin-screen="certificates">
+        <div class="admin-grid admin-grid--metrics" data-certificate-summary></div>
+
+        <div class="admin-split">
+            <section class="admin-card">
+                <div class="admin-card__header">
+                    <div>
+                        <p class="admin-card__eyebrow">Issued artifacts</p>
+                        <h2>Certificates</h2>
+                    </div>
+                </div>
+                <div class="admin-card-grid" data-certificate-list></div>
+            </section>
+
+            <section class="admin-card">
+                <div class="admin-card__header">
+                    <div>
+                        <p class="admin-card__eyebrow">Needs action</p>
+                        <h2>Pending issuance</h2>
+                    </div>
+                </div>
+                <div class="admin-table-shell">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>Learner</th>
+                                <th>Course</th>
+                                <th>Completed</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody data-pending-certificates></tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+    </section>
+{% endblock %}

@@ -1,10 +1,10 @@
 import json
 
-from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.views.decorators.http import require_POST
 
+from LMS.permissions import learner_api_required
 from LMS.utils import can_access_lesson, get_or_create_lesson_progress
 from courses.activity_service import submit_lesson_activity
 from courses.models import Course
@@ -18,13 +18,13 @@ def api_course_list(request):
     return JsonResponse({"courses": payload})
 
 
-@login_required
+@learner_api_required
 def api_course_progress(request, slug):
     course = get_object_or_404(Course.objects.prefetch_related("lessons"), slug=slug, is_published=True)
     return JsonResponse(serialize_course(course, request.user))
 
 
-@login_required
+@learner_api_required
 @require_POST
 def api_submit_lesson_activity(request, course_slug, lesson_slug):
     course = get_object_or_404(Course, slug=course_slug, is_published=True)

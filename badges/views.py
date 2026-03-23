@@ -1,6 +1,6 @@
-from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
 
+from LMS.permissions import learner_required
 from courses.models import Course, Enrollment
 
 from .models import UserBadge
@@ -14,7 +14,7 @@ from .services import (
 )
 
 
-@login_required
+@learner_required
 def badge_list(request):
     sync_user_achievement_state(request.user)
     user_badges = list(
@@ -58,9 +58,5 @@ def badge_list(request):
         "course_collections": course_collections,
         "platform_badges": platform_badges,
         "achievement_summary": build_user_achievement_summary(request.user, awards=user_badges),
-        "featured_platform_badge": next(
-            (item for item in platform_badges if item["status"] != "earned"),
-            platform_badges[0] if platform_badges else None,
-        ),
     }
     return render(request, "badges/badge_list.html", context)

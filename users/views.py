@@ -4,7 +4,6 @@ from math import cos, pi, sin
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import login, update_session_auth_hash
-from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import LoginView
 from django.db.models import Prefetch
 from django.shortcuts import redirect, render
@@ -12,6 +11,7 @@ from django.urls import reverse, reverse_lazy
 from django.utils import timezone
 from django.views.generic import CreateView
 
+from LMS.permissions import is_admin_account, learner_required
 from badges.catalog import get_platform_badge_definitions
 from badges.models import UserBadge
 from badges.services import (
@@ -28,6 +28,7 @@ from quizzes.models import QuizAttempt
 from .forms import ProfilePasswordForm, UserProfileForm, UserRegistrationForm
 
 PROFILE_PANELS = {"overview", "learning", "achievements", "settings", "security"}
+MANUAL_AUTH_BACKEND = "django.contrib.auth.backends.ModelBackend"
 
 
 def _clamp_percent(value):
@@ -326,6 +327,11 @@ class ProviderAwareLoginView(LoginView):
         context["social_providers"] = settings.SOCIAL_LOGIN_PROVIDERS
         return context
 
+    def get_success_url(self):
+        if is_admin_account(self.request.user):
+            return reverse("adminpanel:dashboard") if self.request.user.is_superuser else reverse("home")
+        return super().get_success_url()
+
 
 class RegisterView(CreateView):
     form_class = UserRegistrationForm
@@ -339,12 +345,12 @@ class RegisterView(CreateView):
 
     def form_valid(self, form):
         response = super().form_valid(form)
-        login(self.request, self.object)
+        login(self.request, self.object, backend=MANUAL_AUTH_BACKEND)
         messages.success(self.request, "Your PLMS account is ready. Welcome aboard.")
         return response
 
 
-@login_required
+@learner_required
 def profile_view(request):
     sync_user_achievement_state(request.user)
     active_profile_panel = request.GET.get("panel", "overview")
@@ -430,6 +436,13 @@ def profile_view(request):
     milestone_awards = group_milestone_awards(user_badges)
     platform_badges = build_platform_badge_track(request.user, awards=milestone_awards)
     achievement_summary = build_user_achievement_summary(request.user, awards=user_badges)
+    featured_platform_badge = next(
+        (item for item in platform_badges if item["status"] != "earned"),
+        platform_badges[0] if platform_badges else None,
+    )
+    profile_achievement_cards = _build_achievement_cards(
+        [item for item in platform_badges if item is not featured_platform_badge]
+    )
     analytics = _build_analytics(
         enrollments=enrollments,
         completed_lessons_by_course=completed_lessons_by_course,
@@ -455,11 +468,8 @@ def profile_view(request):
             "social_providers": settings.SOCIAL_LOGIN_PROVIDERS,
             "achievement_summary": achievement_summary,
             "platform_badges": platform_badges,
-            "achievement_cards": _build_achievement_cards(platform_badges),
-            "featured_platform_badge": next(
-                (item for item in platform_badges if item["status"] != "earned"),
-                platform_badges[0] if platform_badges else None,
-            ),
+            "achievement_cards": profile_achievement_cards,
+            "featured_platform_badge": featured_platform_badge,
             "profile_completion": profile_completion,
             "profile_metrics": _build_profile_metrics(
                 achievement_summary=achievement_summary,

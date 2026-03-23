@@ -21,15 +21,27 @@
                 <span>Browse Courses</span>
             </a>
             {% if request.user.is_authenticated %}
-                <a class="landing-button landing-button--secondary" href="{% url 'dashboard' %}">
-                    <svg viewBox="0 0 24 24" aria-hidden="true">
-                        <rect x="3" y="4" width="7" height="7" rx="2"></rect>
-                        <rect x="14" y="4" width="7" height="5" rx="2"></rect>
-                        <rect x="14" y="12" width="7" height="8" rx="2"></rect>
-                        <rect x="3" y="14" width="7" height="6" rx="2"></rect>
-                    </svg>
-                    <span>Open Dashboard</span>
-                </a>
+                {% if is_admin_viewer %}
+                    <a class="landing-button landing-button--secondary" href="{% url 'adminpanel:dashboard' %}">
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <rect x="3" y="4" width="7" height="7" rx="2"></rect>
+                            <rect x="14" y="4" width="7" height="5" rx="2"></rect>
+                            <rect x="14" y="12" width="7" height="8" rx="2"></rect>
+                            <rect x="3" y="14" width="7" height="6" rx="2"></rect>
+                        </svg>
+                        <span>Open Admin Panel</span>
+                    </a>
+                {% else %}
+                    <a class="landing-button landing-button--secondary" href="{% url 'dashboard' %}">
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <rect x="3" y="4" width="7" height="7" rx="2"></rect>
+                            <rect x="14" y="4" width="7" height="5" rx="2"></rect>
+                            <rect x="14" y="12" width="7" height="8" rx="2"></rect>
+                            <rect x="3" y="14" width="7" height="6" rx="2"></rect>
+                        </svg>
+                        <span>Open Dashboard</span>
+                    </a>
+                {% endif %}
             {% else %}
                 <a class="landing-button landing-button--secondary" href="{% url 'register' %}">
                     <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -293,7 +305,7 @@
                 <span class="landing-course-card__summary">{{ row.track_summary }}</span>
             </div>
 
-            {% if request.user.is_authenticated %}
+            {% if request.user.is_authenticated and not is_admin_viewer %}
                 <div class="landing-course-card__progress">
                     <div class="landing-course-card__progress-head">
                         <span class="landing-course-card__progress-label">Progress</span>
@@ -303,6 +315,14 @@
                         <span style="width: {{ row.progress_percent }}%"></span>
                     </div>
                     <p class="landing-course-card__progress-note">{{ row.progress_note }}</p>
+                </div>
+            {% elif is_admin_viewer %}
+                <div class="landing-course-card__preview-note">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <rect x="4" y="4" width="16" height="16" rx="3"></rect>
+                        <path d="M8 9h8M8 13h8M8 17h5"></path>
+                    </svg>
+                    <span>{{ row.progress_note }}</span>
                 </div>
             {% else %}
                 <div class="landing-course-card__preview-note">
@@ -314,7 +334,7 @@
             {% endif %}
 
             <div class="landing-course-card__footer">
-                <a class="landing-course-card__cta" href="{% url 'course_detail' row.course.slug %}">
+                <a class="landing-course-card__cta" href="{% if is_admin_viewer %}{% url 'adminpanel:courses' %}{% else %}{% url 'course_detail' row.course.slug %}{% endif %}">
                     <span>{{ row.cta_label }}</span>
                     <svg viewBox="0 0 24 24" aria-hidden="true">
                         <path d="M5 12h14"></path>

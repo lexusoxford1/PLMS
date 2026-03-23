@@ -5,6 +5,18 @@ from courses.models import Course, Lesson
 from quizzes.models import Choice, Question, Quiz
 
 
+def infer_course_category(course_data):
+    title = (course_data.get("title") or "").lower()
+    slug = (course_data.get("slug") or "").lower()
+    if "c#" in title or "csharp" in slug:
+        return Course.CATEGORY_CSHARP
+    if "python" in title or "python" in slug:
+        return Course.CATEGORY_PYTHON
+    if "php" in title or "php" in slug:
+        return Course.CATEGORY_PHP
+    return Course.CATEGORY_GENERAL
+
+
 class Command(BaseCommand):
     help = "Create or refresh the built-in C#, PHP, and Python programming courses."
 
@@ -32,6 +44,7 @@ class Command(BaseCommand):
             defaults={
                 "title": course_data["title"],
                 "description": course_data["description"],
+                "category": infer_course_category(course_data),
                 "overview": course_data["overview"],
                 "difficulty": course_data["difficulty"],
                 "estimated_hours": course_data["estimated_hours"],

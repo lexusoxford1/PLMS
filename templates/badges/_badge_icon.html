@@ -1,5 +1,16 @@
 <svg class="achievement-medallion__icon-svg" viewBox="0 0 64 64" fill="none" aria-hidden="true">
-    {% if badge.visual_spec.icon == "trail" %}
+    {% if badge.visual_spec.family == "python" %}
+        <path d="M24 14h12a8 8 0 0 1 8 8v7H30a4 4 0 0 0-4 4v5h-6a8 8 0 0 1-8-8v-6a10 10 0 0 1 10-10h2Z" fill="currentColor"/>
+        <circle cx="35" cy="21" r="2.2" fill="white"/>
+        <path d="M40 50H28a8 8 0 0 1-8-8v-7h14a4 4 0 0 0 4-4v-5h6a8 8 0 0 1 8 8v6a10 10 0 0 1-10 10h-2Z" fill="currentColor" opacity="0.82"/>
+        <circle cx="29" cy="43" r="2.2" fill="white"/>
+    {% elif badge.visual_spec.family == "php" %}
+        <ellipse cx="32" cy="32" rx="22" ry="14" stroke="currentColor" stroke-width="4"/>
+        <text x="32" y="37" text-anchor="middle" font-size="14" font-weight="800" font-family="system-ui, sans-serif" fill="currentColor">PHP</text>
+    {% elif badge.visual_spec.family == "csharp" %}
+        <path d="M34 18a14 14 0 1 0 0 28" stroke="currentColor" stroke-width="4.5" stroke-linecap="round"/>
+        <path d="M37 25h16M35 39h16M44 19l-2 26M52 19l-2 26" stroke="currentColor" stroke-width="3.2" stroke-linecap="round"/>
+    {% elif badge.visual_spec.icon == "trail" %}
         <path d="M14 42c8-15 18-24 30-28" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
         <circle cx="18" cy="44" r="5" fill="currentColor"/>
         <circle cx="33" cy="27" r="4" fill="currentColor" opacity="0.9"/>

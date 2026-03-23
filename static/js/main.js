@@ -2,12 +2,119 @@ document.addEventListener("DOMContentLoaded", () => {
     const toastStack = document.querySelector("[data-toast-stack]");
     createNotifier(toastStack);
 
+    initializeAppShell();
     initializeExistingToasts();
     initializeBadgeCelebration();
+    initializeBadgeDetailModals();
+    initializeMilestoneCarousel();
     initializeProfilePanels();
     initializeCodeRunnerForms();
     initializeRunnerResetButtons();
 });
+
+function initializeAppShell() {
+    const shell = document.querySelector("[data-app-shell]");
+    if (!shell) {
+        return;
+    }
+
+    const body = document.body;
+    const sidebar = shell.querySelector("[data-app-sidebar]");
+    const sidebarToggleButtons = Array.from(shell.querySelectorAll("[data-app-sidebar-toggle]"));
+    const sidebarCloseButtons = Array.from(shell.querySelectorAll("[data-app-sidebar-close]"));
+    const navModeButtons = Array.from(shell.querySelectorAll("[data-app-nav-mode-toggle]"));
+    const userMenu = shell.querySelector("[data-user-menu]");
+    const mobileBreakpoint = window.matchMedia("(max-width: 1080px)");
+    const compactStorageKey = "plms-app-sidebar-compact";
+    const getSavedCompactState = () => window.localStorage.getItem(compactStorageKey) === "true";
+
+    const applyCompactState = (compact) => {
+        const shouldCompact = !mobileBreakpoint.matches && compact;
+        body.classList.toggle("app-shell-nav-compact", shouldCompact);
+
+        navModeButtons.forEach((button) => {
+            button.setAttribute("aria-pressed", shouldCompact ? "true" : "false");
+            button.setAttribute(
+                "aria-label",
+                shouldCompact ? "Switch to navigation with labels" : "Switch to icon-only navigation"
+            );
+            button.setAttribute(
+                "title",
+                shouldCompact ? "Expanded navigation" : "Compact navigation"
+            );
+        });
+    };
+
+    const applySidebarState = (open) => {
+        const shouldOpen = mobileBreakpoint.matches && open;
+        body.classList.toggle("app-shell-sidebar-open", shouldOpen);
+
+        if (sidebar) {
+            sidebar.setAttribute("aria-hidden", shouldOpen ? "false" : mobileBreakpoint.matches ? "true" : "false");
+        }
+
+        sidebarToggleButtons.forEach((button) => {
+            button.setAttribute("aria-expanded", shouldOpen ? "true" : "false");
+        });
+    };
+
+    sidebarToggleButtons.forEach((button) => {
+        button.addEventListener("click", () => {
+            applySidebarState(!body.classList.contains("app-shell-sidebar-open"));
+        });
+    });
+
+    sidebarCloseButtons.forEach((button) => {
+        button.addEventListener("click", () => applySidebarState(false));
+    });
+
+    navModeButtons.forEach((button) => {
+        button.addEventListener("click", () => {
+            const nextCompactState = !body.classList.contains("app-shell-nav-compact");
+            applyCompactState(nextCompactState);
+            window.localStorage.setItem(compactStorageKey, nextCompactState ? "true" : "false");
+        });
+    });
+
+    if (userMenu) {
+        userMenu.querySelectorAll("a, button").forEach((item) => {
+            item.addEventListener("click", () => {
+                userMenu.open = false;
+            });
+        });
+
+        document.addEventListener("click", (event) => {
+            if (userMenu.open && !userMenu.contains(event.target)) {
+                userMenu.open = false;
+            }
+        });
+    }
+
+    const handleViewportChange = () => {
+        applySidebarState(false);
+        applyCompactState(getSavedCompactState());
+    };
+
+    if (typeof mobileBreakpoint.addEventListener === "function") {
+        mobileBreakpoint.addEventListener("change", handleViewportChange);
+    } else if (typeof mobileBreakpoint.addListener === "function") {
+        mobileBreakpoint.addListener(handleViewportChange);
+    }
+
+    document.addEventListener("keydown", (event) => {
+        if (event.key !== "Escape") {
+            return;
+        }
+
+        applySidebarState(false);
+        if (userMenu && userMenu.open) {
+            userMenu.open = false;
+        }
+    });
+
+    applySidebarState(false);
+    applyCompactState(getSavedCompactState());
+}
 
 function initializeProfilePanels() {
     document.querySelectorAll("[data-profile-workspace]").forEach((workspace) => {
@@ -252,6 +359,304 @@ function initializeBadgeCelebration() {
             duration: 3600,
         });
     }
+}
+
+function initializeBadgeDetailModals() {
+    const modal = document.querySelector("[data-badge-detail-modal]");
+    if (!modal) {
+        return;
+    }
+
+    const dialog = modal.querySelector(".badge-detail-modal__dialog");
+    const content = modal.querySelector("[data-badge-detail-content]");
+    const closeButtons = Array.from(modal.querySelectorAll("[data-badge-detail-close]"));
+    const triggers = Array.from(document.querySelectorAll("[data-badge-detail-trigger]"));
+    let activeTrigger = null;
+    let closeTimer = 0;
+
+    if (!dialog || !content || !triggers.length) {
+        return;
+    }
+
+    const clearExpandedState = () => {
+        triggers.forEach((trigger) => {
+            trigger.setAttribute("aria-expanded", "false");
+        });
+    };
+
+    const closeModal = () => {
+        if (modal.hidden) {
+            return;
+        }
+
+        modal.classList.remove("visible");
+        document.body.classList.remove("badge-detail-modal-open");
+        clearExpandedState();
+
+        const triggerToFocus = activeTrigger;
+        activeTrigger = null;
+
+        if (closeTimer) {
+            window.clearTimeout(closeTimer);
+        }
+
+        closeTimer = window.setTimeout(() => {
+            modal.hidden = true;
+            content.replaceChildren();
+
+            if (triggerToFocus) {
+                triggerToFocus.focus({ preventScroll: true });
+            }
+        }, 220);
+    };
+
+    const openModal = (trigger) => {
+        const templateId = trigger.dataset.badgeDetailTemplate;
+        const template = templateId ? document.getElementById(templateId) : null;
+
+        if (!(template instanceof HTMLTemplateElement)) {
+            return;
+        }
+
+        if (closeTimer) {
+            window.clearTimeout(closeTimer);
+            closeTimer = 0;
+        }
+
+        content.replaceChildren(template.content.cloneNode(true));
+        clearExpandedState();
+        activeTrigger = trigger;
+        trigger.setAttribute("aria-expanded", "true");
+        modal.hidden = false;
+        document.body.classList.add("badge-detail-modal-open");
+
+        window.requestAnimationFrame(() => {
+            modal.classList.add("visible");
+
+            const initialFocus = modal.querySelector("[data-badge-detail-initial-focus]") || dialog;
+            initialFocus.focus({ preventScroll: true });
+        });
+    };
+
+    triggers.forEach((trigger) => {
+        trigger.addEventListener("click", () => openModal(trigger));
+        trigger.addEventListener("keydown", (event) => {
+            if (event.key !== "Enter" && event.key !== " ") {
+                return;
+            }
+
+            event.preventDefault();
+            openModal(trigger);
+        });
+    });
+
+    closeButtons.forEach((button) => {
+        button.addEventListener("click", closeModal);
+    });
+
+    document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape" && !modal.hidden) {
+            closeModal();
+        }
+    });
+}
+
+function initializeMilestoneCarousel() {
+    document.querySelectorAll("[data-milestone-carousel]").forEach((carousel) => {
+        const track = carousel.querySelector("[data-carousel-track]");
+        const prevButton = carousel.querySelector("[data-carousel-prev]");
+        const nextButton = carousel.querySelector("[data-carousel-next]");
+        const currentCounter = carousel.querySelector("[data-carousel-current]");
+        const currentLabel = carousel.querySelector("[data-carousel-current-label]");
+        const totalCounter = carousel.querySelector("[data-carousel-total]");
+        const progressFill = carousel.querySelector("[data-carousel-progress]");
+        const dots = Array.from(carousel.querySelectorAll("[data-carousel-dot]"));
+        const items = Array.from(carousel.querySelectorAll("[data-carousel-item]"));
+        let frameId = 0;
+        let resizeFrameId = 0;
+        let activeIndex = 0;
+
+        if (!track || !prevButton || !nextButton || !items.length) {
+            return;
+        }
+
+        if (totalCounter) {
+            totalCounter.textContent = `${items.length}`;
+        }
+
+        const updateTrackInset = () => {
+            const firstItem = items[0];
+            if (!firstItem) {
+                return;
+            }
+
+            const inset = Math.max((track.clientWidth - firstItem.offsetWidth) / 2, 12);
+            track.style.setProperty("--milestone-track-inset", `${inset}px`);
+        };
+
+        const getSlideLabel = (item) => {
+            const title = item.querySelector(".achievement-card__body h3");
+            return title ? title.textContent.trim() : "";
+        };
+
+        const updateActiveSlides = (nextActiveIndex) => {
+            activeIndex = Math.max(0, Math.min(items.length - 1, nextActiveIndex));
+
+            items.forEach((item, index) => {
+                const isActive = index === activeIndex;
+                item.classList.toggle("is-active", isActive);
+                item.classList.toggle("is-nearby", Math.abs(index - activeIndex) === 1);
+                item.setAttribute("aria-current", isActive ? "true" : "false");
+            });
+
+            dots.forEach((dot, index) => {
+                const isActive = index === activeIndex;
+                dot.classList.toggle("is-active", isActive);
+                dot.setAttribute("aria-pressed", isActive ? "true" : "false");
+            });
+
+            if (currentCounter) {
+                currentCounter.textContent = `${activeIndex + 1}`;
+            }
+
+            if (currentLabel) {
+                currentLabel.textContent = getSlideLabel(items[activeIndex]);
+            }
+
+            if (progressFill) {
+                const completion = items.length === 1 ? 100 : ((activeIndex + 1) / items.length) * 100;
+                progressFill.style.width = `${completion}%`;
+            }
+        };
+
+        const alignActiveSlide = (behavior = "auto") => {
+            const target = items[activeIndex];
+            if (!target) {
+                return;
+            }
+
+            const maxScroll = Math.max(track.scrollWidth - track.clientWidth, 0);
+            const targetLeft = target.offsetLeft - ((track.clientWidth - target.offsetWidth) / 2);
+
+            track.scrollTo({
+                left: Math.max(0, Math.min(targetLeft, maxScroll)),
+                behavior,
+            });
+        };
+
+        const updateCarouselState = () => {
+            updateTrackInset();
+            const maxScroll = Math.max(track.scrollWidth - track.clientWidth, 0);
+            const isScrollable = maxScroll > 6;
+            const currentIndex = getActiveIndex();
+            const atStart = currentIndex === 0;
+            const atEnd = currentIndex === items.length - 1;
+
+            prevButton.disabled = !isScrollable || atStart;
+            nextButton.disabled = !isScrollable || atEnd;
+            prevButton.setAttribute("aria-disabled", prevButton.disabled ? "true" : "false");
+            nextButton.setAttribute("aria-disabled", nextButton.disabled ? "true" : "false");
+
+            carousel.classList.toggle("is-at-start", atStart);
+            carousel.classList.toggle("is-at-end", atEnd);
+            carousel.classList.toggle("is-static", !isScrollable);
+            updateActiveSlides(currentIndex);
+        };
+
+        const requestStateUpdate = () => {
+            if (frameId) {
+                return;
+            }
+
+            frameId = window.requestAnimationFrame(() => {
+                frameId = 0;
+                updateCarouselState();
+            });
+        };
+
+        const getActiveIndex = () => {
+            const trackRect = track.getBoundingClientRect();
+            const trackCenter = trackRect.left + (trackRect.width / 2);
+            let currentIndex = 0;
+            let nearestDistance = Number.POSITIVE_INFINITY;
+
+            items.forEach((item, index) => {
+                const itemRect = item.getBoundingClientRect();
+                const itemCenter = itemRect.left + (itemRect.width / 2);
+                const distance = Math.abs(itemCenter - trackCenter);
+
+                if (distance < nearestDistance) {
+                    nearestDistance = distance;
+                    currentIndex = index;
+                }
+            });
+
+            return currentIndex;
+        };
+
+        const scrollToIndex = (index, behavior = "smooth") => {
+            updateActiveSlides(index);
+            alignActiveSlide(behavior);
+        };
+
+        prevButton.addEventListener("click", () => {
+            scrollToIndex(getActiveIndex() - 1);
+        });
+
+        nextButton.addEventListener("click", () => {
+            scrollToIndex(getActiveIndex() + 1);
+        });
+
+        dots.forEach((dot, index) => {
+            dot.addEventListener("click", () => {
+                scrollToIndex(index);
+            });
+        });
+
+        track.addEventListener("scroll", requestStateUpdate, { passive: true });
+        track.addEventListener("keydown", (event) => {
+            if (event.key === "ArrowLeft") {
+                event.preventDefault();
+                scrollToIndex(getActiveIndex() - 1);
+            }
+
+            if (event.key === "ArrowRight") {
+                event.preventDefault();
+                scrollToIndex(getActiveIndex() + 1);
+            }
+        });
+
+        const requestResizeAlign = () => {
+            if (resizeFrameId) {
+                return;
+            }
+
+            resizeFrameId = window.requestAnimationFrame(() => {
+                resizeFrameId = 0;
+                updateTrackInset();
+                alignActiveSlide("auto");
+                updateCarouselState();
+            });
+        };
+
+        window.addEventListener("resize", requestResizeAlign);
+
+        if ("ResizeObserver" in window) {
+            const observer = new ResizeObserver(requestResizeAlign);
+            observer.observe(track);
+            if (items[0]) {
+                observer.observe(items[0]);
+            }
+        }
+
+        updateTrackInset();
+        updateActiveSlides(0);
+
+        window.requestAnimationFrame(() => {
+            alignActiveSlide("auto");
+            updateCarouselState();
+        });
+    });
 }
 
 function initializeCodeRunnerForms() {

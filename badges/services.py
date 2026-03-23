@@ -3,6 +3,8 @@ from decimal import Decimal
 
 from django.db import transaction
 
+from LMS.permissions import is_admin_account
+
 from .catalog import get_badge_defaults, get_platform_badge_definitions
 from .models import Badge, UserBadge
 
@@ -73,6 +75,9 @@ def get_platform_badges():
 
 @transaction.atomic
 def award_badge_instance(user, badge, *, course=None):
+    if is_admin_account(user):
+        return None, False
+
     user_badge, created = UserBadge.objects.get_or_create(
         user=user,
         badge=badge,
@@ -112,6 +117,15 @@ def collect_user_metrics(user):
     from progress.models import LessonProgress
     from quizzes.models import QuizAttempt
 
+    if is_admin_account(user):
+        return {
+            "enrolled_courses": 0,
+            "completed_courses": 0,
+            "completed_lessons": 0,
+            "passed_quizzes": 0,
+            "perfect_quizzes": 0,
+        }
+
     enrollments = Enrollment.objects.filter(user=user)
     return {
         "enrolled_courses": enrollments.count(),
@@ -123,6 +137,9 @@ def collect_user_metrics(user):
 
 
 def sync_platform_badges(user):
+    if is_admin_account(user):
+        return []
+
     metrics = collect_user_metrics(user)
     new_awards = []
 
@@ -141,6 +158,9 @@ def sync_platform_badges(user):
 
 def sync_user_achievement_state(user):
     from courses.models import Enrollment
+
+    if is_admin_account(user):
+        return []
 
     enrollments = list(Enrollment.objects.filter(user=user).select_related("course"))
     for enrollment in enrollments:
@@ -270,10 +290,16 @@ def build_course_badge_track(user, course, *, enrollment=None, awards=None):
 
 
 def build_badge_track(user, course, *, enrollment=None, awards=None):
+    if is_admin_account(user):
+        return []
+
     return build_course_badge_track(user, course, enrollment=enrollment, awards=awards)
 
 
 def build_platform_badge_track(user, *, awards=None, metrics=None):
+    if is_admin_account(user):
+        return []
+
     badge_map = awards or {}
     snapshot = metrics or collect_user_metrics(user)
 
@@ -304,6 +330,23 @@ def build_platform_badge_track(user, *, awards=None, metrics=None):
 
 
 def build_user_achievement_summary(user, *, awards=None):
+    if is_admin_account(user):
+        return {
+            "level": 1,
+            "total_xp": 0,
+            "current_floor": 0,
+            "next_floor": 120,
+            "progress_in_level": 0,
+            "progress_percent": 0,
+            "xp_to_next_level": 120,
+            "next_level": 2,
+            "current_span": 120,
+            "earned_badges": 0,
+            "milestone_badges": 0,
+            "course_badges": 0,
+            "latest_awards": [],
+        }
+
     award_list = list(
         awards
         if awards is not None

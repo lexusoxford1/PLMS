@@ -1,0 +1,76 @@
+{% extends "adminpanel/base.html" %}
+
+{% block admin_content %}
+    <section class="admin-page" data-admin-screen="users">
+        <div class="admin-toolbar">
+            <select data-user-filter-role>
+                <option value="">All accounts</option>
+                <option value="learner">Learners</option>
+                <option value="admin">Admins</option>
+            </select>
+        </div>
+
+        <div class="admin-grid admin-grid--metrics" data-user-summary></div>
+
+        <div class="admin-workspace">
+            <section class="admin-card admin-card--list">
+                <div class="admin-card__header">
+                    <div>
+                        <p class="admin-card__eyebrow">Account directory</p>
+                        <h2>Users and roles</h2>
+                    </div>
+                    <div class="admin-card__actions">
+                        <button type="button" class="admin-button admin-button--ghost" data-action="refresh-users">Refresh</button>
+                    </div>
+                </div>
+                <div class="admin-list" data-user-list></div>
+            </section>
+
+            <section class="admin-card admin-card--form">
+                <div class="admin-card__header">
+                    <div>
+                        <p class="admin-card__eyebrow">Role editor</p>
+                        <h2 data-user-form-title>Select a user</h2>
+                    </div>
+                    <div class="admin-inline-note" data-user-meta></div>
+                </div>
+                <div class="admin-feedback" data-user-feedback hidden></div>
+                <form data-user-form class="admin-form">
+                    <input type="hidden" name="user_id">
+                    <div class="admin-form-grid">
+                        <label>
+                            <span>Username</span>
+                            <input type="text" name="username_display" disabled>
+                        </label>
+                        <label>
+                            <span>Role</span>
+                            <select name="role" required>
+                                <option value="learner">Learner</option>
+                                <option value="admin">Admin</option>
+                            </select>
+                        </label>
+                        <label>
+                            <span>First name</span>
+                            <input type="text" name="first_name">
+                        </label>
+                        <label>
+                            <span>Last name</span>
+                            <input type="text" name="last_name">
+                        </label>
+                        <label class="admin-form-grid__full">
+                            <span>Email</span>
+                            <input type="email" name="email">
+                        </label>
+                        <label class="admin-toggle">
+                            <input type="checkbox" name="is_active">
+                            <span>Account is active</span>
+                        </label>
+                    </div>
+                    <div class="admin-form__footer">
+                        <button type="submit" class="admin-button">Save user</button>
+                    </div>
+                </form>
+            </section>
+        </div>
+    </section>
+{% endblock %}

@@ -1,6 +1,8 @@
 from django.db import transaction
 from django.utils import timezone
 
+from .permissions import can_access_learner_features
+
 
 def get_or_create_lesson_progress(user, lesson):
     from progress.models import LessonProgress
@@ -30,10 +32,8 @@ def can_access_lesson(user, lesson):
     from courses.models import Enrollment
     from progress.models import LessonProgress
 
-    if not getattr(user, "is_authenticated", False):
+    if not can_access_learner_features(user):
         return False
-    if user.is_staff or getattr(user, "role", "") == "admin":
-        return True
     if not Enrollment.objects.filter(user=user, course=lesson.course).exists():
         return False
 
@@ -51,7 +51,7 @@ def can_access_lesson(user, lesson):
 
 
 def course_completion_percentage(user, course):
-    if not getattr(user, "is_authenticated", False):
+    if not can_access_learner_features(user):
         return 0
 
     lesson_ids = list(course.lessons.filter(is_published=True).values_list("id", flat=True))
@@ -70,7 +70,7 @@ def course_completion_percentage(user, course):
 
 def build_course_outline(user, course):
     progress_map = {}
-    if getattr(user, "is_authenticated", False):
+    if can_access_learner_features(user):
         from progress.models import LessonProgress
 
         progress_map = {
@@ -84,7 +84,7 @@ def build_course_outline(user, course):
             {
                 "lesson": lesson,
                 "progress": progress_map.get(lesson.id),
-                "accessible": can_access_lesson(user, lesson) if getattr(user, "is_authenticated", False) else False,
+                "accessible": can_access_lesson(user, lesson) if can_access_learner_features(user) else False,
             }
         )
     return outline
@@ -96,6 +96,9 @@ def award_course_completion(user, course):
     from certificates.models import Certificate
     from courses.models import Enrollment
     from progress.models import LessonProgress
+
+    if not can_access_learner_features(user):
+        return None
 
     lesson_ids = list(course.lessons.filter(is_published=True).values_list("id", flat=True))
     if not lesson_ids:
@@ -138,6 +141,9 @@ def award_course_completion(user, course):
 
 def sync_progress_after_quiz_attempt(attempt):
     from badges.services import sync_platform_badges
+
+    if not can_access_learner_features(attempt.user):
+        return None
 
     progress = get_or_create_lesson_progress(attempt.user, attempt.quiz.lesson)
     if attempt.passed and not progress.quiz_passed:

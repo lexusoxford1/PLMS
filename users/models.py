@@ -29,6 +29,7 @@ class User(AbstractUser):
     certificate_name = models.CharField(max_length=200, blank=True)
     profile_picture = models.ImageField(upload_to="profiles/", blank=True, null=True)
     bio = models.TextField(blank=True)
+    last_seen_at = models.DateTimeField(blank=True, null=True)
 
     def save(self, *args, **kwargs):
         if self.is_staff:

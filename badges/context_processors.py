@@ -1,3 +1,5 @@
+from LMS.permissions import is_admin_account
+
 from .models import UserBadge
 from .services import build_user_achievement_summary, sync_user_achievement_state
 
@@ -6,6 +8,12 @@ def pending_badge_unlocks(request):
     user = getattr(request, "user", None)
     if not getattr(user, "is_authenticated", False):
         return {}
+
+    if is_admin_account(user):
+        return {
+            "pending_badge_unlocks": [],
+            "user_achievement_summary": build_user_achievement_summary(user, awards=[]),
+        }
 
     sync_user_achievement_state(user)
 

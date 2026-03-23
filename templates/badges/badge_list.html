@@ -1,65 +1,321 @@
 {% extends "base.html" %}
 
 {% block title %}Badges{% endblock %}
+{% block page_shell_class %}page-shell--wide badge-page-shell{% endblock %}
 
 {% block content %}
-{% include "badges/_level_panel.html" with summary=achievement_summary featured_badge=featured_platform_badge %}
+<div class="badge-page">
+{% include "badges/_level_panel.html" with summary=achievement_summary %}
 
-<section class="stats-row">
-    <article class="stat-card">
+<section class="stats-row badge-summary-row">
+    <article class="stat-card badge-summary-card">
+        <span class="badge-summary-card__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24">
+                <path d="M12 3 15 9l6 .8-4.4 4.3 1 6.1L12 17l-5.6 3.2 1-6.1L3 9.8 9 9l3-6Z"></path>
+            </svg>
+        </span>
         <span class="stat-value">{{ badge_count }}</span>
         <span class="stat-label">Badges Earned</span>
     </article>
-    <article class="stat-card">
+    <article class="stat-card badge-summary-card">
+        <span class="badge-summary-card__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24">
+                <path d="M12 4v16"></path>
+                <path d="M8.5 7.5H14a2.5 2.5 0 1 1 0 5H10a2.5 2.5 0 1 0 0 5h5.5"></path>
+            </svg>
+        </span>
         <span class="stat-value">{{ achievement_summary.total_xp }}</span>
         <span class="stat-label">Total XP</span>
     </article>
-    <article class="stat-card">
+    <article class="stat-card badge-summary-card">
+        <span class="badge-summary-card__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24">
+                <path d="M7 5h10a3 3 0 0 1 3 3v6a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3V8a3 3 0 0 1 3-3Z"></path>
+                <path d="m10 17-.5 4 2.5-1.5 2.5 1.5-.5-4"></path>
+            </svg>
+        </span>
         <span class="stat-value">{{ milestone_badge_count }}</span>
         <span class="stat-label">Milestone Badges</span>
     </article>
 </section>
 
-<section class="section-heading">
-    <div>
-        <p class="eyebrow">Milestone Badge Board</p>
-        <h2>Global missions with XP and level rewards</h2>
-        <p class="muted">{{ badge_count }} of {{ total_badge_count }} badges unlocked.</p>
+<section class="milestone-board" aria-labelledby="milestone-board-title">
+    <div class="section-heading section-heading--milestone">
+        <div class="milestone-heading__content">
+            <div class="milestone-heading__title-row">
+                <div class="milestone-heading__copy">
+                    <p class="eyebrow">Achievement Missions</p>
+                    <h2 class="milestone-heading__title" id="milestone-board-title">Milestone Badge Board</h2>
+                </div>
+            </div>
+            <p class="milestone-heading__subtitle">Global missions with XP and level rewards.</p>
+        </div>
+        <div class="milestone-heading__summary" aria-label="{{ milestone_badge_count }} of {{ platform_badges|length }} milestone badges unlocked">
+            <span class="milestone-heading__summary-label">Progress Snapshot</span>
+            <div class="milestone-heading__summary-pill">
+                <span class="milestone-heading__summary-dot" aria-hidden="true"></span>
+                <strong>{{ milestone_badge_count }} of {{ platform_badges|length }}</strong>
+                <span>Unlocked</span>
+            </div>
+            <div class="milestone-heading__meter" aria-hidden="true">
+                <span
+                    class="milestone-heading__meter-fill"
+                    style="width: {% if platform_badges %}{% widthratio milestone_badge_count platform_badges|length 100 %}{% else %}0{% endif %}%"
+                ></span>
+            </div>
+            <p class="milestone-heading__summary-copy">Platform-wide badges earned so far.</p>
+        </div>
     </div>
-</section>
 
-<section class="achievement-grid">
-    {% for item in platform_badges %}
-        {% include "badges/_badge_card.html" with badge=item.badge award=item.award status=item.status status_label=item.status_label helper_text=item.helper_text progress_percent=item.progress_percent progress_text=item.progress_text xp_reward=item.xp_reward %}
-    {% empty %}
+    <div class="milestone-board__meta">
+        <div class="milestone-board__chips" aria-label="Milestone board summary">
+            <span class="milestone-board__chip">
+                <strong>{{ platform_badges|length }}</strong>
+                <span>missions</span>
+            </span>
+            <span class="milestone-board__chip">
+                <strong>{% if platform_badges %}{% widthratio milestone_badge_count platform_badges|length 100 %}{% else %}0{% endif %}%</strong>
+                <span>complete</span>
+            </span>
+            <span class="milestone-board__chip">
+                <strong>XP</strong>
+                <span>and level rewards</span>
+            </span>
+        </div>
+        <p class="milestone-board__note">
+            Keep momentum by finishing lessons, quizzes, and full course paths to unlock the next platform milestone.
+        </p>
+    </div>
+
+    {% if platform_badges %}
+        <div
+            class="milestone-carousel"
+            data-milestone-carousel
+            aria-roledescription="carousel"
+            aria-label="Milestone badges"
+        >
+            <div class="milestone-carousel__shell">
+                <button
+                    type="button"
+                    class="milestone-carousel__nav milestone-carousel__nav--prev"
+                    data-carousel-prev
+                    aria-controls="milestone-carousel-track"
+                    aria-label="Show previous milestone badges"
+                >
+                    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                        <path d="m14.5 6.5-5 5.5 5 5.5" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </button>
+
+                <div class="milestone-carousel__viewport">
+                    <div
+                        class="milestone-carousel__track"
+                        id="milestone-carousel-track"
+                        data-carousel-track
+                        tabindex="0"
+                        role="list"
+                        aria-label="Milestone badges carousel"
+                    >
+                        {% for item in platform_badges %}
+                            <div
+                                class="milestone-carousel__slide{% if forloop.first %} is-active{% elif forloop.counter == 2 %} is-nearby{% endif %}"
+                                data-carousel-item
+                                role="listitem"
+                                aria-current="{% if forloop.first %}true{% else %}false{% endif %}"
+                            >
+                                {% include "badges/_badge_card.html" with badge=item.badge award=item.award status=item.status status_label=item.status_label helper_text=item.helper_text progress_percent=item.progress_percent progress_text=item.progress_text xp_reward=item.xp_reward compact=True variant="carousel" %}
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <button
+                    type="button"
+                    class="milestone-carousel__nav milestone-carousel__nav--next"
+                    data-carousel-next
+                    aria-controls="milestone-carousel-track"
+                    aria-label="Show next milestone badges"
+                >
+                    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                        <path d="m9.5 6.5 5 5.5-5 5.5" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="milestone-carousel__rail" aria-live="polite">
+                <div class="milestone-carousel__status">
+                    <span class="milestone-carousel__status-label">Mission</span>
+                    <strong data-carousel-current>1</strong>
+                    <span class="milestone-carousel__status-separator">/</span>
+                    <span data-carousel-total>{{ platform_badges|length }}</span>
+                    <span class="milestone-carousel__status-copy" data-carousel-current-label></span>
+                </div>
+                <div class="milestone-carousel__meter" aria-hidden="true">
+                    <span class="milestone-carousel__meter-fill" data-carousel-progress></span>
+                </div>
+            </div>
+        </div>
+    {% else %}
         <article class="card">
             <h2>No milestone badges yet</h2>
             <p>Start learning to unlock your first milestone reward.</p>
         </article>
-    {% endfor %}
+    {% endif %}
 </section>
 
 <section class="section-heading">
-    <div>
+    <div class="badge-section-heading">
+        <span class="badge-section-heading__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24">
+                <path d="M4 6.5A2.5 2.5 0 0 1 6.5 4H20v14H6.5A2.5 2.5 0 0 0 4 20.5v-14Z"></path>
+                <path d="M8 8h7"></path>
+                <path d="M8 12h8"></path>
+            </svg>
+        </span>
+        <div>
         <p class="eyebrow">Course Badge Paths</p>
         <h2>Every course now has its own XP progression track</h2>
+        <p class="muted">Each course collection is spaced and structured to keep rewards, progress, and descriptions easy to scan.</p>
+        </div>
     </div>
 </section>
 
 <section class="course-collection-grid">
     {% for collection in course_collections %}
-        <article class="card achievement-course-card">
-            <div class="row-between">
-                <div>
-                    <p class="eyebrow">Course Track</p>
-                    <h2>{{ collection.course.title }}</h2>
+        <article
+            class="card achievement-course-card"
+            style="
+                --course-accent: {{ collection.track.0.badge.visual_spec.primary|default:'#2563eb' }};
+                --course-accent-soft: {{ collection.track.0.badge.visual_spec.secondary|default:'#93c5fd' }};
+                --course-surface: {{ collection.track.0.badge.visual_spec.surface|default:'#f8fbff' }};
+            "
+        >
+            <div class="achievement-course-card__header">
+                <div class="achievement-course-card__title-group">
+                    {% if collection.track %}
+                        {% with badge=collection.track.0.badge %}
+                            <span class="achievement-course-card__token" aria-hidden="true">
+                                {% include "badges/_badge_icon.html" %}
+                            </span>
+                        {% endwith %}
+                    {% endif %}
+                    <div>
+                        <p class="eyebrow">Course Track</p>
+                        <h2>{{ collection.course.title }}</h2>
+                    </div>
                 </div>
-                <span class="progress-pill">{{ collection.xp_total }} XP</span>
+                <div class="achievement-course-card__stats">
+                    <span class="progress-pill">{{ collection.xp_total }} XP</span>
+                    <span class="achievement-course-card__count">{{ collection.track|length }} badges</span>
+                </div>
             </div>
-            <p>{{ collection.course.description|truncatewords:24 }}</p>
-            <div class="achievement-grid">
+            <p class="achievement-course-card__summary">
+                {{ collection.course.description|truncatewords:24 }}
+            </p>
+            <div class="achievement-grid achievement-grid--course">
                 {% for item in collection.track %}
-                    {% include "badges/_badge_card.html" with badge=item.badge award=item.award status=item.status status_label=item.status_label helper_text=item.helper_text progress_percent=item.progress_percent progress_text=item.progress_text xp_reward=item.xp_reward compact=1 %}
+                    {% with detail_template_id="badge-detail-template-"|add:item.badge.slug badge_title=item.badge.visual_spec.title|default:item.badge.name %}
+                        {% include "badges/_badge_card.html" with badge=item.badge award=item.award status=item.status status_label=item.status_label helper_text=item.helper_text progress_percent=item.progress_percent progress_text=item.progress_text xp_reward=item.xp_reward compact=1 variant="course-path" interactive=1 detail_template_id=detail_template_id modal_target="badge-detail-modal" %}
+                        <template id="{{ detail_template_id }}" data-badge-detail-template>
+                            <div
+                                class="badge-detail-sheet"
+                                style="
+                                    --badge-primary: {{ item.badge.visual_spec.primary }};
+                                    --badge-secondary: {{ item.badge.visual_spec.secondary }};
+                                    --badge-accent: {{ item.badge.visual_spec.accent }};
+                                    --badge-surface: {{ item.badge.visual_spec.surface }};
+                                    --badge-ink: {{ item.badge.visual_spec.ink }};
+                                "
+                            >
+                                <div class="badge-detail-sheet__hero">
+                                    <div class="badge-detail-sheet__hero-copy">
+                                        <div class="badge-detail-sheet__eyebrow">
+                                            <span class="badge-detail-sheet__stage">{{ item.badge.stage_label }}</span>
+                                            <span class="achievement-status achievement-status--{{ item.status }}">{{ item.status_label }}</span>
+                                        </div>
+                                        <h2 id="badge-detail-modal-title">{{ badge_title }}</h2>
+                                        <p class="badge-detail-sheet__short-description">{{ item.badge.description }}</p>
+                                        <div class="badge-detail-sheet__meta">
+                                            <span class="badge-detail-sheet__meta-pill">{{ collection.course.title }}</span>
+                                            <span class="badge-detail-sheet__meta-pill">+ {{ item.xp_reward }} XP</span>
+                                            <span class="badge-detail-sheet__meta-pill">Progress {{ item.progress_text }}</span>
+                                        </div>
+                                    </div>
+                                    <div class="badge-detail-sheet__visual" aria-hidden="true">
+                                        {% with badge=item.badge %}
+                                            <div class="achievement-medallion">
+                                                <span class="achievement-medallion__flare"></span>
+                                                <span class="achievement-medallion__halo"></span>
+                                                <div class="achievement-medallion__core">
+                                                    <span class="achievement-medallion__icon">
+                                                        {% include "badges/_badge_icon.html" %}
+                                                    </span>
+                                                    <span class="achievement-medallion__glyph">{{ item.badge.visual_spec.glyph }}</span>
+                                                </div>
+                                                <span class="achievement-medallion__ribbon">{{ item.badge.visual_spec.accent_label }}</span>
+                                            </div>
+                                        {% endwith %}
+                                        <span class="badge-detail-sheet__visual-note">{{ item.badge.visual_spec.accent_label }}</span>
+                                    </div>
+                                </div>
+
+                                <div class="badge-detail-sheet__body">
+                                    <div class="badge-detail-sheet__body-copy">
+                                        <section class="badge-detail-sheet__section">
+                                            <p class="badge-detail-sheet__section-label">Full details</p>
+                                            {% if item.badge.award_type == "enrollment" %}
+                                                <p>
+                                                    This badge marks the start of your {{ collection.course.title }} badge path. It confirms your enrollment,
+                                                    grants the starter XP reward, and opens the completion milestone that finishes the course track.
+                                                </p>
+                                            {% else %}
+                                                <p>
+                                                    This badge represents full completion of the {{ collection.course.title }} path. It is awarded after
+                                                    you finish the published lessons and successfully clear the final quiz for the course.
+                                                </p>
+                                            {% endif %}
+                                        </section>
+
+                                        <section class="badge-detail-sheet__section">
+                                            <p class="badge-detail-sheet__section-label">Requirements</p>
+                                            <ul class="badge-detail-sheet__requirements">
+                                                {% if item.badge.award_type == "enrollment" %}
+                                                    <li>Enroll in {{ collection.course.title }} to unlock this badge instantly.</li>
+                                                    <li>Start the course path to begin earning toward the completion badge next.</li>
+                                                {% else %}
+                                                    <li>Complete all {{ item.target_value }} published lesson{{ item.target_value|pluralize }} in {{ collection.course.title }}.</li>
+                                                    <li>Pass the final quiz to convert your progress into a completion unlock.</li>
+                                                {% endif %}
+                                            </ul>
+                                        </section>
+                                    </div>
+
+                                    <section class="badge-detail-sheet__progress-card" aria-labelledby="badge-detail-progress-title">
+                                        <div class="badge-detail-sheet__progress-head">
+                                            <div>
+                                                <p class="badge-detail-sheet__section-label">Progress and status</p>
+                                                <h3 id="badge-detail-progress-title">{{ item.status_label }}</h3>
+                                            </div>
+                                            <span class="badge-detail-sheet__xp-pill">+ {{ item.xp_reward }} XP</span>
+                                        </div>
+                                        <p class="badge-detail-sheet__progress-copy">
+                                            {% if item.award %}
+                                                Unlocked {{ item.award.awarded_at|date:"F d, Y" }} and added to your badge collection.
+                                            {% else %}
+                                                {{ item.helper_text }}
+                                            {% endif %}
+                                        </p>
+                                        <div class="achievement-progress badge-detail-sheet__progress-bar" aria-hidden="true">
+                                            <span class="achievement-progress__fill" style="width: {{ item.progress_percent }}%"></span>
+                                        </div>
+                                        <div class="badge-detail-sheet__progress-meta">
+                                            <strong>Progress {{ item.progress_text }}</strong>
+                                            <span class="achievement-status achievement-status--{{ item.status }}">{{ item.status_label }}</span>
+                                        </div>
+                                    </section>
+                                </div>
+                            </div>
+                        </template>
+                    {% endwith %}
                 {% endfor %}
             </div>
         </article>
@@ -70,4 +326,7 @@
         </article>
     {% endfor %}
 </section>
+
+{% include "badges/_badge_detail_modal.html" %}
+</div>
 {% endblock %}

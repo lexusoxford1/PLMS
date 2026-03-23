@@ -1,0 +1,83 @@
+{% extends "adminpanel/base.html" %}
+
+{% block admin_content %}
+    <section class="admin-page" data-admin-screen="courses">
+        <div class="admin-workspace">
+            <section class="admin-card admin-card--list">
+                <div class="admin-card__header">
+                    <div>
+                        <p class="admin-card__eyebrow">Course catalog</p>
+                        <h2>Programming courses</h2>
+                    </div>
+                    <div class="admin-card__actions">
+                        <button type="button" class="admin-button admin-button--ghost" data-action="refresh-courses">Refresh</button>
+                        <button type="button" class="admin-button" data-action="new-course">New course</button>
+                    </div>
+                </div>
+                <div class="admin-list" data-course-list></div>
+            </section>
+
+            <section class="admin-card admin-card--form">
+                <div class="admin-card__header">
+                    <div>
+                        <p class="admin-card__eyebrow">Editor</p>
+                        <h2 data-course-form-title>New course</h2>
+                    </div>
+                    <div class="admin-inline-note" data-course-meta></div>
+                </div>
+                <div class="admin-feedback" data-course-feedback hidden></div>
+                <form data-course-form class="admin-form" enctype="multipart/form-data">
+                    <input type="hidden" name="course_id">
+                    <div class="admin-form-grid">
+                        <label>
+                            <span>Title</span>
+                            <input type="text" name="title" required>
+                        </label>
+                        <label>
+                            <span>Category</span>
+                            <select name="category" required>
+                                <option value="python">Python</option>
+                                <option value="php">PHP</option>
+                                <option value="csharp">C#</option>
+                                <option value="general">General Programming</option>
+                            </select>
+                        </label>
+                        <label class="admin-form-grid__full">
+                            <span>Description</span>
+                            <textarea name="description" rows="4" required></textarea>
+                        </label>
+                        <label class="admin-form-grid__full">
+                            <span>Overview</span>
+                            <textarea name="overview" rows="4"></textarea>
+                        </label>
+                        <label>
+                            <span>Difficulty</span>
+                            <select name="difficulty">
+                                <option value="beginner">Beginner</option>
+                                <option value="intermediate">Intermediate</option>
+                                <option value="advanced">Advanced</option>
+                            </select>
+                        </label>
+                        <label>
+                            <span>Estimated hours</span>
+                            <input type="number" min="1" name="estimated_hours" value="1" required>
+                        </label>
+                        <label class="admin-form-grid__full">
+                            <span>Thumbnail image</span>
+                            <input type="file" name="image" accept="image/*">
+                        </label>
+                        <label class="admin-toggle">
+                            <input type="checkbox" name="is_published" checked>
+                            <span>Published and visible to learners</span>
+                        </label>
+                    </div>
+                    <div class="admin-form__footer">
+                        <button type="submit" class="admin-button">Save course</button>
+                        <button type="button" class="admin-button admin-button--ghost" data-action="reset-course">Clear</button>
+                        <button type="button" class="admin-button admin-button--danger" data-action="delete-course" hidden>Delete</button>
+                    </div>
+                </form>
+            </section>
+        </div>
+    </section>
+{% endblock %}

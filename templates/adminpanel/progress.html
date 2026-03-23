@@ -1,0 +1,38 @@
+{% extends "adminpanel/base.html" %}
+
+{% block admin_content %}
+    <section class="admin-page" data-admin-screen="progress">
+        <div class="admin-toolbar">
+            <select data-progress-filter-course>
+                <option value="">All courses</option>
+            </select>
+        </div>
+
+        <div class="admin-grid admin-grid--metrics" data-progress-summary></div>
+
+        <section class="admin-card">
+            <div class="admin-card__header">
+                <div>
+                    <p class="admin-card__eyebrow">Learner tracking</p>
+                    <h2>Course progress monitor</h2>
+                </div>
+            </div>
+            <div class="admin-table-shell">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>Learner</th>
+                            <th>Course</th>
+                            <th>Progress</th>
+                            <th>Lessons</th>
+                            <th>Activities</th>
+                            <th>Quizzes</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody data-progress-rows></tbody>
+                </table>
+            </div>
+        </section>
+    </section>
+{% endblock %}

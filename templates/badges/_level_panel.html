@@ -1,4 +1,4 @@
-<section class="achievement-hero">
+<section class="achievement-hero achievement-hero--summary-only">
     <div class="achievement-hero__summary">
         <p class="eyebrow">Level Progress</p>
         <h1>Level {{ summary.level }}</h1>
@@ -29,18 +29,5 @@
                 <strong>{{ summary.course_badges }}</strong>
             </div>
         </div>
-    </div>
-
-    <div class="achievement-hero__spotlight">
-        {% if featured_badge %}
-            <p class="eyebrow">Featured Mission</p>
-            {% include "badges/_badge_card.html" with badge=featured_badge.badge award=featured_badge.award status=featured_badge.status status_label=featured_badge.status_label helper_text=featured_badge.helper_text progress_percent=featured_badge.progress_percent progress_text=featured_badge.progress_text xp_reward=featured_badge.xp_reward featured=1 %}
-        {% else %}
-            <article class="card">
-                <p class="eyebrow">Featured Mission</p>
-                <h2>No badge missions yet</h2>
-                <p>Enroll in a course to start collecting XP and unlocking modern achievement cards.</p>
-            </article>
-        {% endif %}
     </div>
 </section>

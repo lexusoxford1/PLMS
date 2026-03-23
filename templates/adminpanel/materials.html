@@ -1,0 +1,72 @@
+{% extends "adminpanel/base.html" %}
+
+{% block admin_content %}
+    <section class="admin-page" data-admin-screen="materials">
+        <div class="admin-workspace">
+            <section class="admin-card admin-card--list">
+                <div class="admin-card__header">
+                    <div>
+                        <p class="admin-card__eyebrow">Learning resources</p>
+                        <h2>Lecture attachments</h2>
+                    </div>
+                    <div class="admin-card__actions">
+                        <select data-material-filter-course>
+                            <option value="">All courses</option>
+                        </select>
+                        <button type="button" class="admin-button" data-action="new-material">New material</button>
+                    </div>
+                </div>
+                <div class="admin-list" data-material-list></div>
+            </section>
+
+            <section class="admin-card admin-card--form">
+                <div class="admin-card__header">
+                    <div>
+                        <p class="admin-card__eyebrow">Uploader</p>
+                        <h2 data-material-form-title>New material</h2>
+                    </div>
+                </div>
+                <div class="admin-feedback" data-material-feedback hidden></div>
+                <form data-material-form class="admin-form" enctype="multipart/form-data">
+                    <input type="hidden" name="material_id">
+                    <div class="admin-form-grid">
+                        <label>
+                            <span>Course</span>
+                            <select data-material-course-select></select>
+                        </label>
+                        <label>
+                            <span>Lecture</span>
+                            <select name="lesson" data-material-lecture-select required></select>
+                        </label>
+                        <label class="admin-form-grid__full">
+                            <span>Title</span>
+                            <input type="text" name="title" required>
+                        </label>
+                        <label>
+                            <span>Material type</span>
+                            <select name="material_type">
+                                <option value="document">Document</option>
+                                <option value="image">Image</option>
+                                <option value="archive">Archive</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </label>
+                        <label class="admin-form-grid__full">
+                            <span>Description</span>
+                            <textarea name="description" rows="3"></textarea>
+                        </label>
+                        <label class="admin-form-grid__full">
+                            <span>Upload file</span>
+                            <input type="file" name="file">
+                        </label>
+                    </div>
+                    <div class="admin-form__footer">
+                        <button type="submit" class="admin-button">Save material</button>
+                        <button type="button" class="admin-button admin-button--ghost" data-action="reset-material">Clear</button>
+                        <button type="button" class="admin-button admin-button--danger" data-action="delete-material" hidden>Delete</button>
+                    </div>
+                </form>
+            </section>
+        </div>
+    </section>
+{% endblock %}

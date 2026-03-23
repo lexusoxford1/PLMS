@@ -111,8 +111,23 @@
         <div class="profile-sidebar__quick card">
             <p class="eyebrow">Quick Actions</p>
             <div class="profile-sidebar__actions">
-                <a class="button compact" href="{% url 'certificate_list' %}">Certificates</a>
-                <a class="button compact secondary" href="{% url 'dashboard' %}">Dashboard</a>
+                <a class="button compact profile-quick-action" href="{% url 'certificate_list' %}">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M7 5h10a3 3 0 0 1 3 3v6a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3V8a3 3 0 0 1 3-3Z"></path>
+                        <path d="M8 9h8"></path>
+                        <path d="M8 13h5"></path>
+                    </svg>
+                    <span>Certificates</span>
+                </a>
+                <a class="button compact secondary profile-quick-action" href="{% url 'dashboard' %}">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <rect x="3" y="4" width="7" height="7" rx="2"></rect>
+                        <rect x="14" y="4" width="7" height="5" rx="2"></rect>
+                        <rect x="14" y="12" width="7" height="8" rx="2"></rect>
+                        <rect x="3" y="14" width="7" height="6" rx="2"></rect>
+                    </svg>
+                    <span>Dashboard</span>
+                </a>
             </div>
             <div class="profile-sidebar__mini-stats">
                 <div>
@@ -128,8 +143,8 @@
     </aside>
 
     <div class="profile-stage">
-        <section class="profile-panel" data-profile-panel="overview" {% if active_profile_panel != "overview" %}hidden{% endif %}>
-            <div class="profile-dashboard-hero profile-dashboard-hero--compact">
+        <section class="profile-panel profile-panel--overview" data-profile-panel="overview" {% if active_profile_panel != "overview" %}hidden{% endif %}>
+            <div class="profile-dashboard-hero profile-dashboard-hero--compact profile-dashboard-hero--stacked">
                 <article class="profile-overview-card">
                     <div class="profile-overview-card__glow" aria-hidden="true"></div>
                     <div class="profile-overview-card__header">
@@ -247,15 +262,25 @@
                         </div>
                     </div>
                 </article>
+            </div>
 
-                <article class="profile-analytics-card">
-                    <div class="section-heading">
-                        <div>
+            <section class="profile-analytics-section" aria-labelledby="profile-learning-analytics-heading">
+                <article class="profile-analytics-card profile-analytics-card--stacked">
+                    <div class="profile-analytics-card__header">
+                        <div class="profile-analytics-card__copy">
                             <p class="eyebrow">Learning Analytics</p>
-                            <h2>Competency radar</h2>
+                            <h2 id="profile-learning-analytics-heading">Competency radar</h2>
                             <p class="muted">A live snapshot of how your LMS activity translates into mastery, practice, and certification readiness.</p>
                         </div>
-                        <span class="profile-analytics-score">{{ learning_analytics.average }}%</span>
+
+                        <div class="profile-analytics-card__summary" aria-label="Average learning analytics score">
+                            <span class="profile-analytics-card__summary-label">Overall mastery</span>
+                            <div class="profile-analytics-card__summary-value">
+                                <strong>{{ learning_analytics.average }}%</strong>
+                                <span>average score</span>
+                            </div>
+                            <p class="profile-analytics-card__summary-copy">Updated from your latest LMS activity, skill momentum, and certificate readiness.</p>
+                        </div>
                     </div>
 
                     <div class="profile-analytics-layout">
@@ -304,7 +329,7 @@
                         </div>
                     </div>
                 </article>
-            </div>
+            </section>
         </section>
 
         <section class="profile-panel" data-profile-panel="learning" {% if active_profile_panel != "learning" %}hidden{% endif %}>
@@ -408,39 +433,55 @@
                 </div>
             </div>
 
-            {% include "badges/_level_panel.html" with summary=achievement_summary featured_badge=featured_platform_badge %}
+            <div class="profile-achievement-hero-layout">
+                {% include "badges/_level_panel.html" with summary=achievement_summary summary_only=1 %}
 
-            <div class="profile-panel__toolbar">
-                <a class="button compact secondary" href="{% url 'badge_list' %}">Open Badge Hub</a>
+                {% if featured_platform_badge %}
+                    <section class="profile-milestone-badge-sidebar" aria-labelledby="profile-milestone-badge-heading">
+                        <p class="eyebrow" id="profile-milestone-badge-heading">Milestone Badge</p>
+                        {% include "badges/_badge_card.html" with badge=featured_platform_badge.badge award=featured_platform_badge.award status=featured_platform_badge.status status_label=featured_platform_badge.status_label helper_text=featured_platform_badge.helper_text progress_percent=featured_platform_badge.progress_percent progress_text=featured_platform_badge.progress_text xp_reward=featured_platform_badge.xp_reward variant="footer-milestone" compact=1 %}
+                    </section>
+                {% endif %}
             </div>
 
-            <section class="profile-achievement-grid">
-                {% for item in achievement_cards %}
-                    <article class="profile-achievement-card" style="{{ item.theme_style }}">
-                        <div class="profile-achievement-card__head">
-                            <span class="profile-achievement-card__glyph">{{ item.glyph }}</span>
-                            <div>
-                                <p class="eyebrow">{{ item.accent_label }}</p>
-                                <h3>{{ item.badge.name }}</h3>
+            <div class="profile-panel__toolbar">
+                <a class="button compact secondary profile-quick-action" href="{% url 'badge_list' %}">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M12 3 15 9l6 .8-4.4 4.3 1 6.1L12 17l-5.6 3.2 1-6.1L3 9.8 9 9l3-6Z"></path>
+                    </svg>
+                    <span>Open Badge Hub</span>
+                </a>
+            </div>
+
+            {% if achievement_cards %}
+                <section class="profile-achievement-grid">
+                    {% for item in achievement_cards %}
+                        <article class="profile-achievement-card" style="{{ item.theme_style }}">
+                            <div class="profile-achievement-card__head">
+                                <span class="profile-achievement-card__glyph">{{ item.glyph }}</span>
+                                <div>
+                                    <p class="eyebrow">{{ item.accent_label }}</p>
+                                    <h3>{{ item.badge.name }}</h3>
+                                </div>
+                                <span class="profile-status-pill {{ item.status }}">{{ item.status_label }}</span>
                             </div>
-                            <span class="profile-status-pill {{ item.status }}">{{ item.status_label }}</span>
-                        </div>
-                        <p class="profile-achievement-card__copy">{{ item.helper_text }}</p>
-                        <div class="profile-progress-bar profile-progress-bar--achievement" aria-hidden="true">
-                            <span style="width: {{ item.progress_percent }}%;"></span>
-                        </div>
-                        <div class="profile-achievement-card__meta">
-                            <span>{{ item.progress_text }}</span>
-                            <span>+{{ item.xp_reward }} XP</span>
-                        </div>
-                    </article>
-                {% empty %}
-                    <article class="card profile-empty-state">
-                        <h3>No achievements yet</h3>
-                        <p>Start a course to unlock your first rewards and see badge progress here.</p>
-                    </article>
-                {% endfor %}
-            </section>
+                            <p class="profile-achievement-card__copy">{{ item.helper_text }}</p>
+                            <div class="profile-progress-bar profile-progress-bar--achievement" aria-hidden="true">
+                                <span style="width: {{ item.progress_percent }}%;"></span>
+                            </div>
+                            <div class="profile-achievement-card__meta">
+                                <span>{{ item.progress_text }}</span>
+                                <span>+{{ item.xp_reward }} XP</span>
+                            </div>
+                        </article>
+                    {% endfor %}
+                </section>
+            {% elif not featured_platform_badge %}
+                <article class="card profile-empty-state">
+                    <h3>No achievements yet</h3>
+                    <p>Start a course to unlock your first rewards and see badge progress here.</p>
+                </article>
+            {% endif %}
 
             {% if recent_badges %}
                 <section class="card profile-recent-badges">

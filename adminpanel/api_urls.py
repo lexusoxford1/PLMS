@@ -1,0 +1,46 @@
+from django.urls import path
+
+from .api_views import (
+    activities_collection,
+    activity_detail,
+    badge_detail,
+    badges_collection,
+    certificate_email,
+    certificate_issue,
+    certificate_refresh,
+    certificates_overview,
+    course_detail,
+    courses_collection,
+    dashboard,
+    lecture_detail,
+    lectures_collection,
+    lookups,
+    material_detail,
+    materials_collection,
+    progress_overview,
+    user_detail,
+    users_collection,
+)
+
+
+urlpatterns = [
+    path("lookups/", lookups, name="api_lookups"),
+    path("dashboard/", dashboard, name="api_dashboard"),
+    path("courses/", courses_collection, name="api_courses"),
+    path("courses/<int:course_id>/", course_detail, name="api_course_detail"),
+    path("lectures/", lectures_collection, name="api_lectures"),
+    path("lectures/<int:lecture_id>/", lecture_detail, name="api_lecture_detail"),
+    path("materials/", materials_collection, name="api_materials"),
+    path("materials/<int:material_id>/", material_detail, name="api_material_detail"),
+    path("activities/", activities_collection, name="api_activities"),
+    path("activities/<int:lecture_id>/", activity_detail, name="api_activity_detail"),
+    path("progress/", progress_overview, name="api_progress"),
+    path("users/", users_collection, name="api_users"),
+    path("users/<int:user_id>/", user_detail, name="api_user_detail"),
+    path("badges/", badges_collection, name="api_badges"),
+    path("badges/<int:badge_id>/", badge_detail, name="api_badge_detail"),
+    path("certificates/", certificates_overview, name="api_certificates"),
+    path("certificates/issue/", certificate_issue, name="api_certificate_issue"),
+    path("certificates/<int:certificate_id>/refresh/", certificate_refresh, name="api_certificate_refresh"),
+    path("certificates/<int:certificate_id>/email/", certificate_email, name="api_certificate_email"),
+]

@@ -1,0 +1,81 @@
+{% extends "adminpanel/base.html" %}
+
+{% block admin_content %}
+    <section class="admin-page" data-admin-screen="lectures">
+        <div class="admin-workspace">
+            <section class="admin-card admin-card--list">
+                <div class="admin-card__header">
+                    <div>
+                        <p class="admin-card__eyebrow">Lecture library</p>
+                        <h2>Course lectures</h2>
+                    </div>
+                    <div class="admin-card__actions">
+                        <select data-lecture-filter-course>
+                            <option value="">All courses</option>
+                        </select>
+                        <button type="button" class="admin-button" data-action="new-lecture">New lecture</button>
+                    </div>
+                </div>
+                <div class="admin-list" data-lecture-list></div>
+            </section>
+
+            <section class="admin-card admin-card--form">
+                <div class="admin-card__header">
+                    <div>
+                        <p class="admin-card__eyebrow">Lecture editor</p>
+                        <h2 data-lecture-form-title>New lecture</h2>
+                    </div>
+                </div>
+                <div class="admin-feedback" data-lecture-feedback hidden></div>
+                <form data-lecture-form class="admin-form" enctype="multipart/form-data">
+                    <input type="hidden" name="lecture_id">
+                    <div class="admin-form-grid">
+                        <label>
+                            <span>Course</span>
+                            <select name="course" data-lecture-course required></select>
+                        </label>
+                        <label>
+                            <span>Order</span>
+                            <input type="number" min="1" name="order" value="1" required>
+                        </label>
+                        <label class="admin-form-grid__full">
+                            <span>Lecture title</span>
+                            <input type="text" name="title" required>
+                        </label>
+                        <label class="admin-form-grid__full">
+                            <span>Summary</span>
+                            <textarea name="summary" rows="3"></textarea>
+                        </label>
+                        <label class="admin-form-grid__full">
+                            <span>Lecture image</span>
+                            <input type="file" name="image" accept="image/*">
+                        </label>
+                        <div class="admin-form-grid__full">
+                            <span class="admin-field-label">Lecture content</span>
+                            <div class="rich-editor" data-rich-editor>
+                                <div class="rich-editor__toolbar">
+                                    <button type="button" data-rich-command="bold">Bold</button>
+                                    <button type="button" data-rich-command="italic">Italic</button>
+                                    <button type="button" data-rich-command="insertUnorderedList">Bullets</button>
+                                    <button type="button" data-rich-command="formatBlock" data-rich-value="h3">Heading</button>
+                                    <button type="button" data-rich-command="formatBlock" data-rich-value="p">Paragraph</button>
+                                </div>
+                                <div class="rich-editor__surface" data-rich-surface contenteditable="true"></div>
+                                <textarea name="lecture_content" data-rich-input hidden></textarea>
+                            </div>
+                        </div>
+                        <label class="admin-toggle">
+                            <input type="checkbox" name="is_published" checked>
+                            <span>Published and available to enrolled learners</span>
+                        </label>
+                    </div>
+                    <div class="admin-form__footer">
+                        <button type="submit" class="admin-button">Save lecture</button>
+                        <button type="button" class="admin-button admin-button--ghost" data-action="reset-lecture">Clear</button>
+                        <button type="button" class="admin-button admin-button--danger" data-action="delete-lecture" hidden>Delete</button>
+                    </div>
+                </form>
+            </section>
+        </div>
+    </section>
+{% endblock %}

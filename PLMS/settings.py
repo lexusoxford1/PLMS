@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     "progress.apps.ProgressConfig",
     "badges.apps.BadgesConfig",
     "certificates.apps.CertificatesConfig",
+    "adminpanel.apps.AdminpanelConfig",
 ]
 
 MIDDLEWARE = [
@@ -48,6 +49,7 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "users.middleware.UpdateLastSeenMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "allauth.account.middleware.AccountMiddleware",

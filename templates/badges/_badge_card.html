@@ -1,63 +1,198 @@
-<article
-    class="achievement-card{% if compact %} compact{% endif %}{% if featured %} featured{% endif %}"
-    data-badge-card
-    data-badge-state="{{ status|default:'locked' }}"
-    data-badge-theme="{{ badge.visual_spec.theme }}"
-    data-badge-pattern="{{ badge.visual_spec.pattern }}"
-    style="
-        --badge-primary: {{ badge.visual_spec.primary }};
-        --badge-secondary: {{ badge.visual_spec.secondary }};
-        --badge-accent: {{ badge.visual_spec.accent }};
-        --badge-surface: {{ badge.visual_spec.surface }};
-        --badge-ink: {{ badge.visual_spec.ink }};
-    "
->
-    <div class="achievement-card__header">
-        <span class="achievement-card__stage">{{ badge.stage_label }}</span>
-        <span class="achievement-xp-pill">+ {{ xp_reward|default:badge.xp_reward }} XP</span>
-    </div>
+{% with card_variant=variant|default:'default' xp_value=xp_reward|default:badge.xp_reward %}
+    <article
+        class="achievement-card{% if badge.visual_spec.family == 'milestone' %} achievement-card--milestone{% endif %}{% if compact %} compact{% endif %}{% if featured %} featured{% endif %}{% if card_variant != 'default' %} achievement-card--{{ card_variant }}{% endif %}{% if interactive %} achievement-card--interactive{% endif %}"
+        data-badge-card
+        data-badge-state="{{ status|default:'locked' }}"
+        data-badge-theme="{{ badge.visual_spec.theme }}"
+        data-badge-pattern="{{ badge.visual_spec.pattern }}"
+        data-badge-family="{{ badge.visual_spec.family|default:'milestone' }}"
+        data-badge-variant="{{ card_variant }}"
+        {% if interactive %}
+            role="button"
+            tabindex="0"
+            aria-haspopup="dialog"
+            aria-controls="{{ modal_target|default:'badge-detail-modal' }}"
+            aria-expanded="false"
+            aria-label="View details for {{ badge.visual_spec.title|default:badge.name }}"
+            data-badge-detail-trigger
+            data-badge-detail-template="{{ detail_template_id }}"
+        {% endif %}
+        style="
+            --badge-primary: {{ badge.visual_spec.primary }};
+            --badge-secondary: {{ badge.visual_spec.secondary }};
+            --badge-accent: {{ badge.visual_spec.accent }};
+            --badge-surface: {{ badge.visual_spec.surface }};
+            --badge-ink: {{ badge.visual_spec.ink }};
+        "
+    >
+        {% if card_variant != "featured-mission" or badge.course %}
+        <div class="achievement-card__header">
+            {% if card_variant != "carousel" or badge.course %}
+                <div class="achievement-card__eyebrow">
+                    {% if card_variant != "carousel" and card_variant != "featured-mission" %}
+                        <span class="achievement-card__stage">{{ badge.stage_label }}</span>
+                    {% endif %}
+                    {% if badge.course %}
+                        <span class="achievement-card__family">
+                            {% if badge.visual_spec.family == "csharp" %}
+                                C#
+                            {% elif badge.visual_spec.family == "php" %}
+                                PHP
+                            {% elif badge.visual_spec.family == "python" %}
+                                Python
+                            {% else %}
+                                Course
+                            {% endif %}
+                        </span>
+                    {% endif %}
+                </div>
+            {% endif %}
+            {% if card_variant != "featured-mission" %}
+                <span class="achievement-xp-pill">+ {{ xp_value }} XP</span>
+            {% endif %}
+        </div>
+        {% endif %}
 
-    <div class="achievement-card__visual">
-        <span class="achievement-card__mini-mark">
-            {% include "badges/_badge_icon.html" %}
-        </span>
-        <div class="achievement-medallion">
-            <span class="achievement-medallion__flare"></span>
-            <span class="achievement-medallion__halo"></span>
-            <div class="achievement-medallion__core">
-                <span class="achievement-medallion__icon">
-                    {% include "badges/_badge_icon.html" %}
-                </span>
-                <span class="achievement-medallion__glyph">{{ badge.visual_spec.glyph }}</span>
+        <div class="achievement-card__content">
+            {% if card_variant == "featured-mission" %}
+                <div class="achievement-card__featured-mission">
+                    <div class="achievement-card__featured-mission-visual">
+                        <div class="achievement-medallion">
+                            <span class="achievement-medallion__flare"></span>
+                            <span class="achievement-medallion__halo"></span>
+                            <div class="achievement-medallion__core">
+                                <span class="achievement-medallion__icon">
+                                    {% include "badges/_badge_icon.html" %}
+                                </span>
+                                <span class="achievement-medallion__glyph">{{ badge.visual_spec.glyph }}</span>
+                            </div>
+                            <span class="achievement-medallion__ribbon">{{ badge.visual_spec.accent_label }}</span>
+                        </div>
+                    </div>
+
+                    <div class="achievement-card__featured-mission-copy">
+                        <h3>{{ badge.visual_spec.title|default:badge.name }}</h3>
+                        {% if badge.description %}
+                            <p class="achievement-card__subtitle achievement-card__subtitle--featured-mission">
+                                {{ badge.description|truncatewords:12 }}
+                            </p>
+                        {% endif %}
+                    </div>
+                </div>
+            {% elif card_variant == "footer-milestone" %}
+                <div class="achievement-card__footer-milestone">
+                    <div class="achievement-card__footer-milestone-main">
+                        <div class="achievement-card__visual">
+                            <span class="achievement-card__mini-mark">
+                                {% include "badges/_badge_icon.html" %}
+                            </span>
+                            <div class="achievement-medallion">
+                                <span class="achievement-medallion__flare"></span>
+                                <span class="achievement-medallion__halo"></span>
+                                <div class="achievement-medallion__core">
+                                    <span class="achievement-medallion__icon">
+                                        {% include "badges/_badge_icon.html" %}
+                                    </span>
+                                    <span class="achievement-medallion__glyph">{{ badge.visual_spec.glyph }}</span>
+                                </div>
+                                <span class="achievement-medallion__ribbon">{{ badge.visual_spec.accent_label }}</span>
+                            </div>
+                        </div>
+
+                        <div class="achievement-card__footer-milestone-copy">
+                            <div class="achievement-card__eyebrow achievement-card__eyebrow--footer">
+                                <span class="achievement-card__stage">{{ badge.stage_label }}</span>
+                                <span class="achievement-xp-pill achievement-xp-pill--footer">+ {{ xp_value }} XP</span>
+                            </div>
+                            <h3>{{ badge.visual_spec.title|default:badge.name }}</h3>
+                            <p class="achievement-card__description achievement-card__description--footer">
+                                {% if helper_text %}
+                                    {{ helper_text }}
+                                {% else %}
+                                    {{ badge.description }}
+                                {% endif %}
+                            </p>
+                            {% if award %}
+                                <p class="achievement-card__footnote achievement-card__footnote--footer">Unlocked {{ award.awarded_at|date:"M d, Y" }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="achievement-progress-block achievement-progress-block--footer-milestone">
+                        <div class="achievement-progress__head">
+                            <strong class="achievement-progress__summary">Progress {{ progress_text|default:"1/1" }}</strong>
+                        </div>
+                        <div class="achievement-progress">
+                            <span class="achievement-progress__fill" style="width: {{ progress_percent|default:100 }}%"></span>
+                        </div>
+                        <div class="achievement-progress__meta">
+                            <span class="achievement-status achievement-status--{{ status|default:'locked' }}">
+                                {{ status_label|default:"Locked" }}
+                            </span>
+                            {% if interactive %}
+                                <span class="achievement-card__hint">View details</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            {% else %}
+                <div class="achievement-card__visual">
+                    <span class="achievement-card__mini-mark">
+                        {% include "badges/_badge_icon.html" %}
+                    </span>
+                    <div class="achievement-medallion">
+                        <span class="achievement-medallion__flare"></span>
+                        <span class="achievement-medallion__halo"></span>
+                        <div class="achievement-medallion__core">
+                            <span class="achievement-medallion__icon">
+                                {% include "badges/_badge_icon.html" %}
+                            </span>
+                            <span class="achievement-medallion__glyph">{{ badge.visual_spec.glyph }}</span>
+                        </div>
+                        <span class="achievement-medallion__ribbon">{{ badge.visual_spec.accent_label }}</span>
+                    </div>
+                </div>
+
+                <div class="achievement-card__body">
+                    <h3>{{ badge.visual_spec.title|default:badge.name }}</h3>
+
+                    {% if show_course and badge.course %}
+                        <p class="achievement-card__course">{{ badge.course.title }}</p>
+                    {% endif %}
+
+                    <p class="achievement-card__description">{{ badge.description }}</p>
+
+                    {% if award %}
+                        <p class="achievement-card__footnote">Unlocked {{ award.awarded_at|date:"M d, Y" }}</p>
+                    {% elif helper_text %}
+                        <p class="achievement-card__footnote">{{ helper_text }}</p>
+                    {% endif %}
+                </div>
+            {% endif %}
+        </div>
+
+        {% if card_variant != "featured-mission" and card_variant != "footer-milestone" %}
+            <div class="achievement-card__footer{% if card_variant == 'carousel' %} achievement-card__footer--carousel{% endif %}">
+                <div class="achievement-progress-block">
+                    <div class="achievement-progress__head">
+                        <strong class="achievement-progress__summary">Progress {{ progress_text|default:"1/1" }}</strong>
+                    </div>
+                    <div class="achievement-progress">
+                        <span class="achievement-progress__fill" style="width: {{ progress_percent|default:100 }}%"></span>
+                    </div>
+                    <div class="achievement-progress__meta">
+                        <span class="achievement-status achievement-status--{{ status|default:'locked' }}">
+                            {{ status_label|default:"Locked" }}
+                        </span>
+                        {% if interactive %}
+                            <span class="achievement-card__hint">View details</span>
+                        {% endif %}
+                    </div>
+                </div>
+                {% if card_variant == "carousel" %}
+                    <span class="achievement-card__side-label achievement-progress__label achievement-progress__label--vertical">{{ badge.stage_label }}</span>
+                {% endif %}
             </div>
-            <span class="achievement-medallion__ribbon">{{ badge.visual_spec.accent_label }}</span>
-        </div>
-    </div>
-
-    <div class="achievement-card__body">
-        <h3>{{ badge.name }}</h3>
-        <p class="achievement-card__description">{{ badge.description }}</p>
-
-        {% if show_course and badge.course %}
-            <p class="achievement-card__course">{{ badge.course.title }}</p>
         {% endif %}
-
-        {% if award %}
-            <p class="achievement-card__footnote">Unlocked {{ award.awarded_at|date:"M d, Y" }}</p>
-        {% elif helper_text %}
-            <p class="achievement-card__footnote">{{ helper_text }}</p>
-        {% endif %}
-    </div>
-
-    <div class="achievement-progress-block">
-        <div class="achievement-progress">
-            <span class="achievement-progress__fill" style="width: {{ progress_percent|default:100 }}%"></span>
-        </div>
-        <div class="achievement-progress__meta">
-            <span class="achievement-status achievement-status--{{ status|default:'locked' }}">
-                {{ status_label|default:"Locked" }}
-            </span>
-            <strong>{{ progress_text|default:"1/1" }}</strong>
-        </div>
-    </div>
-</article>
+    </article>
+{% endwith %}

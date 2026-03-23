@@ -1,0 +1,73 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Admin Panel Login | PLMS</title>
+    <link rel="stylesheet" href="{% static 'css/adminpanel.css' %}">
+</head>
+<body class="admin-panel-body admin-panel-body--login">
+    <main class="admin-auth">
+        <section class="admin-auth__panel">
+            <div class="admin-auth__brand">
+                <span class="admin-sidebar__brand-mark" aria-hidden="true">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M12 3 4 7v10l8 4 8-4V7l-8-4Z"></path>
+                        <path d="M8 10h8"></path>
+                        <path d="M8 14h5"></path>
+                    </svg>
+                </span>
+                <div>
+                    <p class="admin-eyebrow">Secure Superuser Access</p>
+                    <h1>Admin Panel Login</h1>
+                    <p>Sign in with a Django superuser account to manage the PLMS admin workspace.</p>
+                </div>
+            </div>
+
+            {% if messages %}
+                <section class="admin-messages">
+                    {% for message in messages %}
+                        <div class="admin-message admin-message--{{ message.tags|default:'error' }}">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                </section>
+            {% endif %}
+
+            {% if form.non_field_errors %}
+                <section class="admin-messages">
+                    {% for error in form.non_field_errors %}
+                        <div class="admin-message admin-message--error">{{ error }}</div>
+                    {% endfor %}
+                </section>
+            {% endif %}
+
+            <form method="post" class="admin-form admin-auth__form">
+                {% csrf_token %}
+                <input type="hidden" name="next" value="{{ next }}">
+                <label>
+                    <span>Username</span>
+                    <input type="text" name="username" value="{{ form.username.value|default:'' }}" required autofocus>
+                    {% for error in form.username.errors %}
+                        <small class="admin-field-error">{{ error }}</small>
+                    {% endfor %}
+                </label>
+                <label>
+                    <span>Password</span>
+                    <input type="password" name="password" required>
+                    {% for error in form.password.errors %}
+                        <small class="admin-field-error">{{ error }}</small>
+                    {% endfor %}
+                </label>
+                <button type="submit" class="admin-button">Sign in</button>
+            </form>
+
+            <div class="admin-auth__footer">
+                <a href="{% url 'home' %}">Back to PLMS home</a>
+                <a href="{% url 'login' %}">Learner login</a>
+            </div>
+        </section>
+    </main>
+</body>
+</html>

@@ -3,7 +3,7 @@
 {% block title %}Dashboard{% endblock %}
 
 {% block content %}
-{% include "badges/_level_panel.html" with summary=achievement_summary featured_badge=featured_platform_badge %}
+{% include "badges/_level_panel.html" with summary=achievement_summary %}
 
 <section class="stats-row">
     <article class="stat-card">
@@ -45,12 +45,6 @@
                 <strong>Next level</strong>
                 <span>{{ achievement_summary.xp_to_next_level }} XP remaining</span>
             </div>
-            {% if featured_platform_badge %}
-                <div class="stack-item">
-                    <strong>Active mission</strong>
-                    <span>{{ featured_platform_badge.badge.name }} - {{ featured_platform_badge.progress_text }}</span>
-                </div>
-            {% endif %}
         </div>
         <div class="card-actions">
             <a class="button compact secondary" href="{% url 'badge_list' %}">View Full Badge Hub</a>
@@ -81,36 +75,73 @@
     </div>
 </section>
 
-<section class="course-collection-grid">
+<section class="course-collection-grid course-collection-grid--dashboard">
     {% for row in dashboard_courses %}
         <article class="card course-journey-card">
-            <div class="row-between">
-                <div>
-                    <p class="eyebrow">Course Progress</p>
-                    <h2>{{ row.course.title }}</h2>
+            <div class="course-journey-card__header">
+                <div class="course-journey-card__heading">
+                    <span class="course-journey-card__icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M4 6.5A2.5 2.5 0 0 1 6.5 4H20v14H6.5A2.5 2.5 0 0 0 4 20.5v-14Z"></path>
+                            <path d="M8 8h7"></path>
+                            <path d="M8 12h8"></path>
+                        </svg>
+                    </span>
+                    <div class="course-journey-card__title-block">
+                        <p class="eyebrow">Course Progress</p>
+                        <h2>{{ row.course.title }}</h2>
+                    </div>
                 </div>
-                <span class="progress-pill">{{ row.progress_percent }}%</span>
+                <div class="course-journey-card__header-meta">
+                    <span class="progress-pill">{{ row.progress_percent }}%</span>
+                    <span class="course-journey-card__metric">{{ row.unlocked_badge_count }}/{{ row.total_badge_count }} badges</span>
+                </div>
             </div>
-            <p>{{ row.course.description|truncatewords:24 }}</p>
-            <div class="achievement-inline-tags">
+            <p class="course-journey-card__summary">{{ row.course.description|truncatewords:24 }}</p>
+            <div class="course-journey-card__progress">
+                <div class="course-journey-card__progress-head">
+                    <span>Course completion</span>
+                    <strong>{{ row.progress_percent }}%</strong>
+                </div>
+                <div class="achievement-progress course-journey-card__progress-bar" aria-hidden="true">
+                    <span class="achievement-progress__fill" style="width: {{ row.progress_percent }}%"></span>
+                </div>
+            </div>
+            <div class="achievement-inline-tags course-journey-card__tags">
                 <span class="badge-tag">{{ row.unlocked_badge_count }}/{{ row.total_badge_count }} badges</span>
                 <span class="badge-tag">{{ row.earned_xp }}/{{ row.total_xp }} XP</span>
                 {% if row.next_badge %}
                     <span class="badge-tag">Next: {{ row.next_badge.badge.stage_label }}</span>
                 {% endif %}
             </div>
-            <div class="checklist">
+            <ol class="checklist course-journey-card__outline">
                 {% for lesson_row in row.outline %}
-                    <div class="check-item">
-                        <span class="{% if lesson_row.progress and lesson_row.progress.completed_at %}status done{% elif lesson_row.accessible %}status open{% else %}status locked{% endif %}"></span>
-                        <span>{{ lesson_row.lesson.order }}. {{ lesson_row.lesson.title }}</span>
-                    </div>
+                    <li class="check-item course-journey-card__outline-item">
+                        <span class="{% if lesson_row.progress and lesson_row.progress.completed_at %}status done{% elif lesson_row.accessible %}status open{% else %}status locked{% endif %}" aria-hidden="true"></span>
+                        <span class="course-journey-card__lesson-number">{{ lesson_row.lesson.order }}</span>
+                        <div class="course-journey-card__lesson-main">
+                            <strong class="course-journey-card__lesson-title">{{ lesson_row.lesson.title }}</strong>
+                            <span class="course-journey-card__lesson-state">
+                                {% if lesson_row.progress and lesson_row.progress.completed_at %}
+                                    Completed
+                                {% elif lesson_row.accessible %}
+                                    Available now
+                                {% else %}
+                                    Locked
+                                {% endif %}
+                            </span>
+                        </div>
+                    </li>
                 {% endfor %}
-            </div>
-            <div class="card-actions">
+            </ol>
+            <div class="card-actions course-journey-card__footer">
                 <a class="button compact" href="{% url 'course_detail' row.course.slug %}">Open Course</a>
                 {% if row.completed_at %}
-                    <span class="muted">Completed {{ row.completed_at|date:"M d, Y" }}</span>
+                    <span class="muted course-journey-card__footnote">Completed {{ row.completed_at|date:"M d, Y" }}</span>
+                {% elif row.next_badge %}
+                    <span class="muted course-journey-card__footnote">Next badge target: {{ row.next_badge.badge.stage_label }}</span>
+                {% else %}
+                    <span class="muted course-journey-card__footnote">All badge milestones unlocked.</span>
                 {% endif %}
             </div>
         </article>
@@ -157,4 +188,5 @@
         </div>
     </article>
 </section>
+
 {% endblock %}

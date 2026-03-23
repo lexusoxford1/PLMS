@@ -1,0 +1,29 @@
+{% extends "adminpanel/base.html" %}
+
+{% block admin_content %}
+    <section class="admin-page" data-admin-screen="dashboard">
+        <div class="admin-grid admin-grid--metrics" data-dashboard-metrics></div>
+
+        <div class="admin-split">
+            <section class="admin-card">
+                <div class="admin-card__header">
+                    <div>
+                        <p class="admin-card__eyebrow">Enrollment overview</p>
+                        <h2>Course performance</h2>
+                    </div>
+                </div>
+                <div class="admin-card-grid" data-dashboard-courses></div>
+            </section>
+
+            <section class="admin-card">
+                <div class="admin-card__header">
+                    <div>
+                        <p class="admin-card__eyebrow">Live updates</p>
+                        <h2>Recent activity</h2>
+                    </div>
+                </div>
+                <div class="admin-activity-feed" data-dashboard-activity></div>
+            </section>
+        </div>
+    </section>
+{% endblock %}
