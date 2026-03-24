@@ -17,6 +17,7 @@ from certificates.presentation import build_certificate_preview_model, build_cer
 
 from .activity_config import get_effective_activity_rules
 from .activity_service import build_activity_concept_review, build_activity_form, build_runner_ui, submit_lesson_activity
+from .material_library import build_lesson_material_collections
 from .models import Course, Enrollment, Lesson
 
 
@@ -183,7 +184,12 @@ def enroll_course(request, slug):
 @learner_required
 def lesson_detail(request, course_slug, lesson_slug):
     course = get_object_or_404(Course, slug=course_slug, is_published=True)
-    lesson = get_object_or_404(Lesson, course=course, slug=lesson_slug, is_published=True)
+    lesson = get_object_or_404(
+        Lesson.objects.prefetch_related("materials"),
+        course=course,
+        slug=lesson_slug,
+        is_published=True,
+    )
 
     if not Enrollment.objects.filter(user=request.user, course=course).exists():
         messages.warning(request, "Please enroll in the course before opening lessons.")
@@ -197,6 +203,7 @@ def lesson_detail(request, course_slug, lesson_slug):
     activity_form = build_activity_form(lesson, progress)
     activity_concept_review = build_activity_concept_review(lesson)
     activity_rules = get_effective_activity_rules(lesson)
+    material_library = build_lesson_material_collections(lesson, request=request)
     runner_ui = build_runner_ui(lesson)
     if progress.activity_completed:
         activity_form.fields["response"].disabled = True
@@ -211,6 +218,7 @@ def lesson_detail(request, course_slug, lesson_slug):
             "activity_form": activity_form,
             "activity_rules": activity_rules,
             "activity_concept_review": activity_concept_review,
+            "material_library": material_library,
             "runner_ui": runner_ui,
             "next_lesson": next_lesson,
         },

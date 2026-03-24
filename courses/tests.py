@@ -6,6 +6,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 from django.core.management import call_command
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.contrib.auth import get_user_model
 from django.conf import settings
 from django.test import TestCase
@@ -14,10 +15,11 @@ from django.urls import reverse
 from LMS.utils import can_access_lesson, get_or_create_lesson_progress
 
 from .activity_service import build_activity_concept_review
+from .material_library import build_lesson_material_collections, build_material_view_model
 from .activity_validation import validate_activity_submission
 from .code_runner.process import minimal_env
 from .code_runner.schemas import CodeExecutionResult
-from .models import Course, Enrollment, Lesson
+from .models import Course, Enrollment, LearningMaterial, Lesson
 
 
 class ProgrammingCourseSeedTests(TestCase):
@@ -164,6 +166,353 @@ class ActivityValidationTests(TestCase):
         self.assertIn("Correct answer. You have successfully completed this activity.", response.content.decode())
         self.assertIn("You used print() enough times to complete the activity.", response.content.decode())
         self.assertTrue(can_access_lesson(self.user, self.lesson_two))
+
+
+class LessonMaterialPresentationTests(TestCase):
+    def setUp(self):
+        self.user = get_user_model().objects.create_user(
+            username="viewer",
+            password="testpass123",
+            email="viewer@example.com",
+        )
+        self.course = Course.objects.create(
+            title="Presentation Library Course",
+            description="Test lecture materials and presentation rendering.",
+            overview="A short course with stored lecture attachments.",
+        )
+        self.lesson = Lesson.objects.create(
+            course=self.course,
+            title="Presentation Lesson",
+            order=1,
+            slug="presentation-lesson",
+            summary="Review the lecture viewer and attachments.",
+            lecture_content="<p>Lesson content.</p>",
+            is_published=True,
+        )
+        Enrollment.objects.create(user=self.user, course=self.course)
+        self.client.login(username="viewer", password="testpass123")
+
+    def test_external_presentation_moves_to_supplemental_resources_without_viewer(self):
+        LearningMaterial.objects.create(
+            lesson=self.lesson,
+            title="Orientation Slides",
+            order=1,
+            description="Embedded Google Slides deck.",
+            material_type=LearningMaterial.MATERIAL_PRESENTATION,
+            source_type=LearningMaterial.SOURCE_URL,
+            presentation_provider=LearningMaterial.PRESENTATION_PROVIDER_GOOGLE_SLIDES,
+            external_url="https://docs.google.com/presentation/d/sample-deck/edit",
+        )
+        LearningMaterial.objects.create(
+            lesson=self.lesson,
+            title="Starter Archive",
+            order=2,
+            description="Download the starter files for this lecture.",
+            material_type=LearningMaterial.MATERIAL_ARCHIVE,
+            file=SimpleUploadedFile("starter-files.zip", b"zip-binary", content_type="application/zip"),
+        )
+
+        response = self.client.get(reverse("lesson_detail", args=[self.course.slug, self.lesson.slug]))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, "data-lesson-slide-viewer", html=False)
+        self.assertNotContains(response, "data-lesson-presentation-carousel", html=False)
+        self.assertContains(response, "Orientation Slides")
+        self.assertContains(response, "Starter Archive")
+        self.assertContains(response, "Files and supporting resources")
+        self.assertContains(response, "https://docs.google.com/presentation/d/sample-deck/edit")
+        self.assertContains(response, "Mark Lecture Complete", count=1)
+
+    def test_uploaded_presentation_without_preview_uses_file_fallback_not_office_web_viewer(self):
+        material = LearningMaterial.objects.create(
+            lesson=self.lesson,
+            title="Uploaded Deck",
+            order=3,
+            description="Stored slide deck.",
+            material_type=LearningMaterial.MATERIAL_PRESENTATION,
+            source_type=LearningMaterial.SOURCE_FILE,
+            file=SimpleUploadedFile(
+                "lecture-deck.pptx",
+                b"pptx-binary",
+                content_type="application/vnd.openxmlformats-officedocument.presentationml.presentation",
+            ),
+        )
+
+        with patch("courses.material_library.ensure_presentation_preview", return_value={}):
+            material_view = build_material_view_model(material, ensure_preview_assets=True)
+
+        self.assertEqual(material_view["viewer_kind"], "download")
+        self.assertEqual(material_view["embed_url"], "")
+        self.assertFalse(material_view["supports_embed"])
+        self.assertNotIn("officeapps.live.com", material_view["embed_url"])
+        self.assertIn("generated preview slides", material_view["viewer_note"].lower())
+
+    def test_uploaded_presentation_without_slide_images_stays_in_supplemental_resources(self):
+        LearningMaterial.objects.create(
+            lesson=self.lesson,
+            title="Uploaded Deck",
+            order=1,
+            description="Stored slide deck.",
+            material_type=LearningMaterial.MATERIAL_PRESENTATION,
+            source_type=LearningMaterial.SOURCE_FILE,
+            file=SimpleUploadedFile(
+                "lecture-deck.pptx",
+                b"pptx-binary",
+                content_type="application/vnd.openxmlformats-officedocument.presentationml.presentation",
+            ),
+        )
+
+        with patch("courses.material_library.ensure_presentation_preview", return_value={}):
+            response = self.client.get(reverse("lesson_detail", args=[self.course.slug, self.lesson.slug]))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, "data-lesson-slide-viewer", html=False)
+        self.assertContains(response, "Uploaded Deck")
+        self.assertContains(response, "Files and supporting resources")
+        self.assertContains(response, "Mark Lecture Complete", count=1)
+
+    def test_lesson_detail_renders_uploaded_slide_preview_when_available(self):
+        LearningMaterial.objects.create(
+            lesson=self.lesson,
+            title="Basic Math Learning Materials",
+            order=1,
+            description="Rendered deck preview.",
+            material_type=LearningMaterial.MATERIAL_PRESENTATION,
+            source_type=LearningMaterial.SOURCE_FILE,
+            file=SimpleUploadedFile(
+                "basic_math_course.pptx",
+                b"pptx-binary",
+                content_type="application/vnd.openxmlformats-officedocument.presentationml.presentation",
+            ),
+        )
+
+        preview_payload = {
+            "status": "ready",
+            "kind": "slide_images",
+            "available": True,
+            "slides": [
+                {
+                    "index": 1,
+                    "label": "Slide 1",
+                    "image_url": "/media/presentation_previews/1/slides/Slide1.PNG",
+                    "thumb_url": "/media/presentation_previews/1/slides/Slide1.PNG",
+                },
+                {
+                    "index": 2,
+                    "label": "Slide 2",
+                    "image_url": "/media/presentation_previews/1/slides/Slide2.PNG",
+                    "thumb_url": "/media/presentation_previews/1/slides/Slide2.PNG",
+                },
+            ],
+            "slide_count": 2,
+            "cover_url": "/media/presentation_previews/1/slides/Slide1.PNG",
+            "pdf_url": "/media/presentation_previews/1/preview.pdf",
+            "error": "",
+        }
+
+        with patch("courses.material_library.ensure_presentation_preview", return_value=preview_payload):
+            response = self.client.get(reverse("lesson_detail", args=[self.course.slug, self.lesson.slug]))
+
+        content = response.content.decode()
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "data-lesson-slide-viewer", html=False)
+        self.assertContains(response, "/media/presentation_previews/1/slides/Slide1.PNG")
+        self.assertContains(response, "/media/presentation_previews/1/slides/Slide2.PNG")
+        self.assertContains(response, "Open PDF preview")
+        self.assertContains(response, "Download deck")
+        self.assertNotContains(response, "data-lesson-presentation-carousel", html=False)
+        self.assertContains(response, "Mark Lecture Complete", count=1)
+        self.assertNotContains(response, "view.officeapps.live.com")
+        self.assertRegex(content, r'data-lesson-slide-total>\s*2\s*</span>')
+        self.assertRegex(content, r'data-lesson-slide-completion[^>]*hidden')
+
+    def test_lesson_material_collections_flatten_multiple_slide_decks_in_order(self):
+        LearningMaterial.objects.create(
+            lesson=self.lesson,
+            title="Deck One",
+            order=1,
+            description="First rendered deck.",
+            material_type=LearningMaterial.MATERIAL_PRESENTATION,
+            source_type=LearningMaterial.SOURCE_FILE,
+            file=SimpleUploadedFile(
+                "deck-one.pptx",
+                b"deck-one",
+                content_type="application/vnd.openxmlformats-officedocument.presentationml.presentation",
+            ),
+        )
+        LearningMaterial.objects.create(
+            lesson=self.lesson,
+            title="External Deck",
+            order=2,
+            description="Supplemental presentation source.",
+            material_type=LearningMaterial.MATERIAL_PRESENTATION,
+            source_type=LearningMaterial.SOURCE_URL,
+            presentation_provider=LearningMaterial.PRESENTATION_PROVIDER_EMBED,
+            external_url="https://example.com/deck",
+        )
+        LearningMaterial.objects.create(
+            lesson=self.lesson,
+            title="Deck Two",
+            order=3,
+            description="Second rendered deck.",
+            material_type=LearningMaterial.MATERIAL_PRESENTATION,
+            source_type=LearningMaterial.SOURCE_FILE,
+            file=SimpleUploadedFile(
+                "deck-two.pptx",
+                b"deck-two",
+                content_type="application/vnd.openxmlformats-officedocument.presentationml.presentation",
+            ),
+        )
+
+        preview_payloads = [
+            {
+                "status": "ready",
+                "kind": "slide_images",
+                "available": True,
+                "slides": [
+                    {
+                        "index": 1,
+                        "label": "Slide 1",
+                        "image_url": "/media/presentation_previews/10/slides/Slide1.PNG",
+                        "thumb_url": "/media/presentation_previews/10/slides/Slide1.PNG",
+                    },
+                    {
+                        "index": 2,
+                        "label": "Slide 2",
+                        "image_url": "/media/presentation_previews/10/slides/Slide2.PNG",
+                        "thumb_url": "/media/presentation_previews/10/slides/Slide2.PNG",
+                    },
+                ],
+                "slide_count": 2,
+                "cover_url": "/media/presentation_previews/10/slides/Slide1.PNG",
+                "pdf_url": "/media/presentation_previews/10/preview.pdf",
+                "error": "",
+            },
+            {
+                "status": "ready",
+                "kind": "slide_images",
+                "available": True,
+                "slides": [
+                    {
+                        "index": 1,
+                        "label": "Slide 1",
+                        "image_url": "/media/presentation_previews/11/slides/Slide1.PNG",
+                        "thumb_url": "/media/presentation_previews/11/slides/Slide1.PNG",
+                    },
+                ],
+                "slide_count": 1,
+                "cover_url": "/media/presentation_previews/11/slides/Slide1.PNG",
+                "pdf_url": "/media/presentation_previews/11/preview.pdf",
+                "error": "",
+            },
+        ]
+
+        with patch("courses.material_library.ensure_presentation_preview", side_effect=preview_payloads):
+            collections = build_lesson_material_collections(self.lesson)
+
+        self.assertTrue(collections["presentation_viewer"]["enabled"])
+        self.assertEqual(collections["presentation_viewer"]["total_slides"], 3)
+        self.assertEqual(collections["presentation_viewer"]["slides"][0]["deck_title"], "Deck One")
+        self.assertEqual(collections["presentation_viewer"]["slides"][2]["deck_title"], "Deck Two")
+        self.assertEqual(
+            [item["title"] for item in collections["supplemental_resources"]],
+            ["External Deck"],
+        )
+
+    def test_single_slide_viewer_unlocks_completion_immediately(self):
+        LearningMaterial.objects.create(
+            lesson=self.lesson,
+            title="Single Slide Deck",
+            order=1,
+            description="Rendered deck preview.",
+            material_type=LearningMaterial.MATERIAL_PRESENTATION,
+            source_type=LearningMaterial.SOURCE_FILE,
+            file=SimpleUploadedFile(
+                "single-slide-deck.pptx",
+                b"pptx-binary",
+                content_type="application/vnd.openxmlformats-officedocument.presentationml.presentation",
+            ),
+        )
+
+        preview_payload = {
+            "status": "ready",
+            "kind": "slide_images",
+            "available": True,
+            "slides": [
+                {
+                    "index": 1,
+                    "label": "Slide 1",
+                    "image_url": "/media/presentation_previews/12/slides/Slide1.PNG",
+                    "thumb_url": "/media/presentation_previews/12/slides/Slide1.PNG",
+                },
+            ],
+            "slide_count": 1,
+            "cover_url": "/media/presentation_previews/12/slides/Slide1.PNG",
+            "pdf_url": "/media/presentation_previews/12/preview.pdf",
+            "error": "",
+        }
+
+        with patch("courses.material_library.ensure_presentation_preview", return_value=preview_payload):
+            response = self.client.get(reverse("lesson_detail", args=[self.course.slug, self.lesson.slug]))
+
+        content = response.content.decode()
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('data-completion-unlocked="true"', content)
+        self.assertIn('data-lesson-slide-viewer', content)
+        self.assertNotRegex(content, r'data-lesson-slide-completion[^>]*hidden')
+        self.assertRegex(content, r'data-lesson-slide-next[^>]*disabled')
+
+    def test_completed_lesson_renders_completion_row_immediately_in_viewer(self):
+        LearningMaterial.objects.create(
+            lesson=self.lesson,
+            title="Completed Deck",
+            order=1,
+            description="Rendered deck preview.",
+            material_type=LearningMaterial.MATERIAL_PRESENTATION,
+            source_type=LearningMaterial.SOURCE_FILE,
+            file=SimpleUploadedFile(
+                "completed-deck.pptx",
+                b"pptx-binary",
+                content_type="application/vnd.openxmlformats-officedocument.presentationml.presentation",
+            ),
+        )
+
+        progress = get_or_create_lesson_progress(self.user, self.lesson)
+        progress.lecture_completed = True
+        progress.save()
+
+        preview_payload = {
+            "status": "ready",
+            "kind": "slide_images",
+            "available": True,
+            "slides": [
+                {
+                    "index": 1,
+                    "label": "Slide 1",
+                    "image_url": "/media/presentation_previews/13/slides/Slide1.PNG",
+                    "thumb_url": "/media/presentation_previews/13/slides/Slide1.PNG",
+                },
+                {
+                    "index": 2,
+                    "label": "Slide 2",
+                    "image_url": "/media/presentation_previews/13/slides/Slide2.PNG",
+                    "thumb_url": "/media/presentation_previews/13/slides/Slide2.PNG",
+                },
+            ],
+            "slide_count": 2,
+            "cover_url": "/media/presentation_previews/13/slides/Slide1.PNG",
+            "pdf_url": "/media/presentation_previews/13/preview.pdf",
+            "error": "",
+        }
+
+        with patch("courses.material_library.ensure_presentation_preview", return_value=preview_payload):
+            response = self.client.get(reverse("lesson_detail", args=[self.course.slug, self.lesson.slug]))
+
+        content = response.content.decode()
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("Lecture Completed", content)
+        self.assertNotRegex(content, r'data-lesson-slide-completion[^>]*hidden')
+        self.assertIn('data-completion-unlocked="true"', content)
 
 
 class CodeRunnerActivityTests(TestCase):

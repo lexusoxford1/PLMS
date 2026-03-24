@@ -64,13 +64,26 @@ class LessonAdminForm(forms.ModelForm):
 class LearningMaterialAdminForm(forms.ModelForm):
     class Meta:
         model = LearningMaterial
-        fields = ["lesson", "title", "description", "file", "material_type"]
+        fields = [
+            "lesson",
+            "title",
+            "order",
+            "description",
+            "material_type",
+            "source_type",
+            "presentation_provider",
+            "external_url",
+            "file",
+        ]
 
     def clean_title(self):
         value = (self.cleaned_data.get("title") or "").strip()
         if not value:
             raise forms.ValidationError("Material title is required.")
         return value
+
+    def clean_external_url(self):
+        return (self.cleaned_data.get("external_url") or "").strip()
 
 
 class BadgeAdminForm(forms.ModelForm):

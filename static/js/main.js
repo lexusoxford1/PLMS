@@ -7,6 +7,7 @@ document.addEventListener("DOMContentLoaded", () => {
     initializeBadgeCelebration();
     initializeBadgeDetailModals();
     initializeMilestoneCarousel();
+    initializeLessonSlideViewer();
     initializeProfilePanels();
     initializeCodeRunnerForms();
     initializeRunnerResetButtons();
@@ -656,6 +657,182 @@ function initializeMilestoneCarousel() {
             alignActiveSlide("auto");
             updateCarouselState();
         });
+    });
+}
+
+function initializeLessonSlideViewer() {
+    document.querySelectorAll("[data-lesson-slide-viewer]").forEach((viewer) => {
+        const dataId = viewer.dataset.slideDataId;
+        const scriptElement = dataId ? document.getElementById(dataId) : null;
+        if (!scriptElement) {
+            return;
+        }
+
+        let slides = [];
+        try {
+            slides = JSON.parse(scriptElement.textContent || "[]");
+        } catch (error) {
+            slides = [];
+        }
+
+        if (!Array.isArray(slides) || !slides.length) {
+            return;
+        }
+
+        const titleElement = viewer.querySelector("[data-lesson-slide-title]");
+        const fileElement = viewer.querySelector("[data-lesson-slide-file]");
+        const currentCounter = viewer.querySelector("[data-lesson-slide-current]");
+        const totalCounter = viewer.querySelector("[data-lesson-slide-total]");
+        const imageElement = viewer.querySelector("[data-lesson-slide-image]");
+        const prevButton = viewer.querySelector("[data-lesson-slide-prev]");
+        const nextButton = viewer.querySelector("[data-lesson-slide-next]");
+        const pdfAction = viewer.querySelector("[data-lesson-slide-pdf]");
+        const downloadAction = viewer.querySelector("[data-lesson-slide-download]");
+        const completionRow = viewer.querySelector("[data-lesson-slide-completion]");
+
+        let currentSlideIndex = 0;
+        let lastReachedSlideIndex = 0;
+        let completionUnlocked = viewer.dataset.completionUnlocked === "true";
+
+        if (totalCounter) {
+            totalCounter.textContent = `${slides.length}`;
+        }
+
+        if (pdfAction) {
+            pdfAction.dataset.defaultLabel = pdfAction.textContent.trim();
+        }
+        if (downloadAction) {
+            downloadAction.dataset.defaultLabel = downloadAction.textContent.trim();
+        }
+
+        const setButtonState = (button, disabled) => {
+            if (!button) {
+                return;
+            }
+            button.disabled = disabled;
+            button.setAttribute("aria-disabled", disabled ? "true" : "false");
+        };
+
+        const setActionState = (action, url, label) => {
+            if (!action) {
+                return;
+            }
+
+            if (!url) {
+                action.hidden = true;
+                action.removeAttribute("href");
+                return;
+            }
+
+            action.hidden = false;
+            action.href = url;
+            action.textContent = label || action.dataset.defaultLabel || action.textContent;
+        };
+
+        const revealCompletion = () => {
+            if (!completionRow) {
+                return;
+            }
+
+            if (!completionRow.hidden) {
+                completionRow.classList.add("is-visible");
+                return;
+            }
+
+            completionRow.hidden = false;
+            window.requestAnimationFrame(() => {
+                completionRow.classList.add("is-visible");
+            });
+        };
+
+        const updateViewer = (nextIndex) => {
+            currentSlideIndex = Math.max(0, Math.min(slides.length - 1, nextIndex));
+            lastReachedSlideIndex = Math.max(lastReachedSlideIndex, currentSlideIndex);
+
+            const slide = slides[currentSlideIndex];
+            if (!slide) {
+                return;
+            }
+
+            viewer.dataset.currentSlideIndex = `${currentSlideIndex}`;
+
+            setText(titleElement, slide.deck_title || "Lecture presentation");
+            if (fileElement) {
+                fileElement.textContent = slide.file_name || "";
+                fileElement.hidden = !String(slide.file_name || "").trim();
+            }
+
+            if (currentCounter) {
+                currentCounter.textContent = `${currentSlideIndex + 1}`;
+            }
+
+            if (imageElement) {
+                imageElement.src = slide.image_url || "";
+                imageElement.alt = slide.alt || `${slide.deck_title || "Lecture presentation"} - Slide ${currentSlideIndex + 1}`;
+            }
+
+            setActionState(pdfAction, slide.pdf_url, slide.pdf_label);
+            setActionState(downloadAction, slide.download_url, slide.download_label);
+
+            setButtonState(prevButton, currentSlideIndex === 0);
+            setButtonState(nextButton, currentSlideIndex === slides.length - 1);
+
+            if (!completionUnlocked && lastReachedSlideIndex === slides.length - 1) {
+                completionUnlocked = true;
+                viewer.dataset.completionUnlocked = "true";
+            }
+
+            if (completionUnlocked) {
+                revealCompletion();
+            }
+        };
+
+        const isTypingTarget = (target) => {
+            if (!(target instanceof HTMLElement)) {
+                return false;
+            }
+            return Boolean(
+                target.closest("input, textarea, select, [contenteditable='true']")
+            );
+        };
+
+        if (prevButton) {
+            prevButton.addEventListener("click", () => {
+                if (currentSlideIndex > 0) {
+                    updateViewer(currentSlideIndex - 1);
+                }
+            });
+        }
+
+        if (nextButton) {
+            nextButton.addEventListener("click", () => {
+                if (currentSlideIndex < slides.length - 1) {
+                    updateViewer(currentSlideIndex + 1);
+                }
+            });
+        }
+
+        viewer.addEventListener("keydown", (event) => {
+            if (isTypingTarget(event.target)) {
+                return;
+            }
+
+            if (event.key === "ArrowLeft") {
+                event.preventDefault();
+                if (currentSlideIndex > 0) {
+                    updateViewer(currentSlideIndex - 1);
+                }
+            }
+
+            if (event.key === "ArrowRight") {
+                event.preventDefault();
+                if (currentSlideIndex < slides.length - 1) {
+                    updateViewer(currentSlideIndex + 1);
+                }
+            }
+        });
+
+        updateViewer(0);
     });
 }
 

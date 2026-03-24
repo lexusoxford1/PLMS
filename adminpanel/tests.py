@@ -1,9 +1,11 @@
 from django.contrib.auth import get_user_model
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 from django.urls import reverse
 
 from LMS.utils import award_course_completion
 from courses.models import Course
+from courses.models import LearningMaterial
 from courses.models import Lesson
 from quizzes.models import Quiz
 
@@ -115,6 +117,121 @@ class AdminPanelCourseApiTests(TestCase):
 
         self.assertEqual(response.status_code, 201)
         self.assertTrue(Course.objects.filter(title="PHP Foundations").exists())
+
+    def test_course_category_filter_returns_matching_courses(self):
+        Course.objects.create(
+            title="Python Automation",
+            description="Automate tasks with Python.",
+            overview="Overview",
+            category=Course.CATEGORY_PYTHON,
+        )
+        Course.objects.create(
+            title="Web Programming",
+            description="Build web apps.",
+            overview="Overview",
+            category=Course.CATEGORY_GENERAL,
+        )
+
+        response = self.client.get(
+            reverse("adminpanel:api_courses"),
+            {"category": Course.CATEGORY_PYTHON},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertEqual(len(payload["items"]), 1)
+        self.assertEqual(payload["items"][0]["category"], Course.CATEGORY_PYTHON)
+        self.assertTrue(any(option["id"] == Course.CATEGORY_GENERAL for option in payload["categories"]))
+        self.assertTrue(any(option["title"] == "Python Programming and Automation" for option in payload["categories"]))
+
+
+class AdminPanelLearningMaterialApiTests(TestCase):
+    def setUp(self):
+        user_model = get_user_model()
+        self.admin_user = user_model.objects.create_superuser(
+            username="materialsadmin",
+            password="builderpass123",
+            email="materials@example.com",
+        )
+        self.client.force_login(self.admin_user)
+        self.course = Course.objects.create(
+            title="Presentation Course",
+            description="Course with managed lecture attachments.",
+            overview="Overview",
+            category=Course.CATEGORY_GENERAL,
+            is_published=True,
+        )
+        self.lesson = Lesson.objects.create(
+            course=self.course,
+            title="Lecture One",
+            order=1,
+            summary="Manage lecture files and slide decks.",
+            lecture_content="<p>Lecture content.</p>",
+            is_published=True,
+        )
+
+    def test_admin_can_create_google_slides_presentation_link(self):
+        response = self.client.post(
+            reverse("adminpanel:api_materials"),
+            {
+                "lesson": self.lesson.id,
+                "title": "Orientation Slides",
+                "order": 1,
+                "description": "Opening lecture deck.",
+                "material_type": LearningMaterial.MATERIAL_PRESENTATION,
+                "source_type": LearningMaterial.SOURCE_URL,
+                "presentation_provider": LearningMaterial.PRESENTATION_PROVIDER_GOOGLE_SLIDES,
+                "external_url": "https://docs.google.com/presentation/d/demo-slide-deck/edit",
+            },
+        )
+
+        self.assertEqual(response.status_code, 201)
+        material = LearningMaterial.objects.get(title="Orientation Slides")
+        self.assertEqual(material.material_type, LearningMaterial.MATERIAL_PRESENTATION)
+        self.assertEqual(material.source_type, LearningMaterial.SOURCE_URL)
+        self.assertEqual(material.presentation_provider, LearningMaterial.PRESENTATION_PROVIDER_GOOGLE_SLIDES)
+        self.assertEqual(material.external_url, "https://docs.google.com/presentation/d/demo-slide-deck/edit")
+
+    def test_admin_can_upload_presentation_deck_file(self):
+        response = self.client.post(
+            reverse("adminpanel:api_materials"),
+            {
+                "lesson": self.lesson.id,
+                "title": "Lecture Deck",
+                "order": 2,
+                "description": "Stored presentation file.",
+                "material_type": LearningMaterial.MATERIAL_PRESENTATION,
+                "source_type": LearningMaterial.SOURCE_FILE,
+                "presentation_provider": LearningMaterial.PRESENTATION_PROVIDER_UPLOAD,
+                "file": SimpleUploadedFile(
+                    "lecture-deck.pptx",
+                    b"pptx-binary",
+                    content_type="application/vnd.openxmlformats-officedocument.presentationml.presentation",
+                ),
+            },
+        )
+
+        self.assertEqual(response.status_code, 201)
+        material = LearningMaterial.objects.get(title="Lecture Deck")
+        self.assertEqual(material.presentation_provider, LearningMaterial.PRESENTATION_PROVIDER_UPLOAD)
+        self.assertTrue(material.file.name.endswith(".pptx"))
+
+    def test_admin_rejects_external_link_for_non_presentation_material(self):
+        response = self.client.post(
+            reverse("adminpanel:api_materials"),
+            {
+                "lesson": self.lesson.id,
+                "title": "Bad External Resource",
+                "order": 3,
+                "material_type": LearningMaterial.MATERIAL_DOCUMENT,
+                "source_type": LearningMaterial.SOURCE_URL,
+                "presentation_provider": LearningMaterial.PRESENTATION_PROVIDER_EMBED,
+                "external_url": "https://example.com/resource",
+            },
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("External links are only supported", response.json()["errors"]["source_type"][0])
 
 
 class AdminRoleSeparationTests(TestCase):

@@ -268,15 +268,24 @@ async function initCoursesPage(root) {
     const feedback = root.querySelector("[data-course-feedback]");
     const titleEl = root.querySelector("[data-course-form-title]");
     const metaEl = root.querySelector("[data-course-meta]");
+    const filterCategory = root.querySelector("[data-course-filter-category]");
     const deleteButton = root.querySelector('[data-action="delete-course"]');
     let currentId = "";
     let items = [];
 
     async function loadCourses(selectedId = currentId) {
-        const data = await request(`${API_BASE}/courses/`);
+        const query = filterCategory.value ? `?category=${encodeURIComponent(filterCategory.value)}` : "";
+        const data = await request(`${API_BASE}/courses/${query}`);
         items = data.items;
+        fillSelect(filterCategory, data.categories || [], { blankLabel: "All categories" });
+        if (query) {
+            filterCategory.value = new URLSearchParams(query.slice(1)).get("category");
+        }
         if (!items.length) {
-            renderEmpty(listEl, "No courses yet. Create the first programming track.");
+            renderEmpty(
+                listEl,
+                filterCategory.value ? "No courses match the current category filter." : "No courses yet. Create the first programming track."
+            );
             return;
         }
         listEl.innerHTML = items.map((item) => buildCourseListItem(item)).join("");
@@ -292,6 +301,7 @@ async function initCoursesPage(root) {
         form.elements.course_id.value = "";
         form.elements.estimated_hours.value = 1;
         form.elements.is_published.checked = true;
+        form.elements.category.value = "general";
         titleEl.textContent = "New course";
         metaEl.textContent = "";
         deleteButton.hidden = true;
@@ -310,7 +320,7 @@ async function initCoursesPage(root) {
         form.elements.estimated_hours.value = item.estimated_hours || 1;
         form.elements.is_published.checked = Boolean(item.is_published);
         titleEl.textContent = item.title;
-        metaEl.textContent = `${item.lesson_count ?? 0} lectures / ${item.enrollment_count ?? 0} enrollments`;
+        metaEl.textContent = `${item.category_label || "Uncategorized"} / ${item.lesson_count ?? 0} lectures / ${item.enrollment_count ?? 0} enrollments`;
         deleteButton.hidden = false;
         Array.from(listEl.querySelectorAll("[data-course-item]")).forEach((button) => {
             button.classList.toggle("is-active", button.dataset.courseItem === String(item.id));
@@ -329,6 +339,7 @@ async function initCoursesPage(root) {
     root.querySelector('[data-action="new-course"]').addEventListener("click", resetForm);
     root.querySelector('[data-action="reset-course"]').addEventListener("click", resetForm);
     root.querySelector('[data-action="refresh-courses"]').addEventListener("click", () => loadCourses());
+    filterCategory.addEventListener("change", () => loadCourses());
 
     deleteButton.addEventListener("click", async () => {
         if (!currentId || !window.confirm("Delete this course and its related content?")) {
@@ -476,25 +487,47 @@ async function initLecturesPage(root) {
 }
 
 async function initMaterialsPage(root) {
+    const summaryEl = root.querySelector("[data-material-summary]");
     const listEl = root.querySelector("[data-material-list]");
     const form = root.querySelector("[data-material-form]");
     const feedback = root.querySelector("[data-material-feedback]");
     const titleEl = root.querySelector("[data-material-form-title]");
+    const formMetaEl = root.querySelector("[data-material-form-meta]");
     const deleteButton = root.querySelector('[data-action="delete-material"]');
     const filterCourse = root.querySelector("[data-material-filter-course]");
+    const filterLecture = root.querySelector("[data-material-filter-lecture]");
+    const filterStatus = root.querySelector("[data-material-filter-status]");
     const formCourse = root.querySelector("[data-material-course-select]");
     const formLecture = root.querySelector("[data-material-lecture-select]");
+    const typeSelect = root.querySelector("[data-material-type-select]");
+    const sourceSelect = root.querySelector("[data-material-source-select]");
+    const providerSelect = root.querySelector("[data-material-provider-select]");
+    const sourceRow = root.querySelector("[data-material-source-row]");
+    const providerRow = root.querySelector("[data-material-provider-row]");
+    const urlRow = root.querySelector("[data-material-url-row]");
+    const urlInput = form.elements.external_url;
+    const fileRow = root.querySelector("[data-material-file-row]");
+    const fileInput = root.querySelector("[data-material-file-input]");
+    const currentSource = root.querySelector("[data-material-current]");
+    const currentSourceTitle = root.querySelector("[data-material-current-title]");
+    const currentSourceCopy = root.querySelector("[data-material-current-copy]");
+    const currentSourceLink = root.querySelector("[data-material-current-link]");
+    const glance = root.querySelector("[data-material-glance]");
+    const glanceType = root.querySelector("[data-material-glance-type]");
+    const glanceTitle = root.querySelector("[data-material-glance-title]");
+    const glanceCopy = root.querySelector("[data-material-glance-copy]");
     let currentId = "";
     let lookups = { courses: [], lectures: [] };
+    let items = [];
 
     function filterLectures(courseId) {
         return lookups.lectures.filter((lecture) => !courseId || String(lecture.course_id) === String(courseId));
     }
 
-    function fillLectureSelect(select, courseId, selectedLectureId = "") {
+    function fillLectureSelect(select, courseId, selectedLectureId = "", blankLabel = "Select lecture") {
         const lectures = filterLectures(courseId);
-        fillSelect(select, lectures, { blankLabel: "Select lecture", labelKey: "label" });
-        if (selectedLectureId) {
+        fillSelect(select, lectures, { blankLabel, labelKey: "label" });
+        if (selectedLectureId && lectures.some((lecture) => String(lecture.id) === String(selectedLectureId))) {
             select.value = String(selectedLectureId);
         }
     }
@@ -502,64 +535,246 @@ async function initMaterialsPage(root) {
     async function refreshLookups() {
         lookups = await loadLookups();
         fillSelect(filterCourse, lookups.courses, { blankLabel: "All courses" });
+        fillLectureSelect(filterLecture, filterCourse.value, filterLecture.value, "All lectures");
         fillSelect(formCourse, lookups.courses, { blankLabel: "Select course" });
-        fillLectureSelect(formLecture, "");
+        fillLectureSelect(formLecture, formCourse.value, formLecture.value);
     }
 
-    async function loadMaterials() {
-        const query = filterCourse.value ? `?course=${encodeURIComponent(filterCourse.value)}` : "";
-        const data = await request(`${API_BASE}/materials/${query}`);
-        if (!data.items.length) {
-            renderEmpty(listEl, "No materials match the current filter.");
+    function renderSummary(materials) {
+        const lectureCount = new Set(materials.map((item) => item.lesson_id)).size;
+        const presentationCount = materials.filter((item) => item.is_presentation).length;
+        const linkedCount = materials.filter((item) => item.source_type === "url").length;
+        const uploadedDeckCount = materials.filter(
+            (item) => item.is_presentation && item.presentation_provider === "upload"
+        ).length;
+
+        summaryEl.innerHTML = [
+            createMetricCard("Filtered items", materials.length, "Attachments currently shown in the workspace"),
+            createMetricCard("Lectures in view", lectureCount, "Lecture groups represented by the current filter"),
+            createMetricCard("Presentations", presentationCount, "Items prepared for the learner carousel"),
+            createMetricCard("Linked embeds", linkedCount + uploadedDeckCount, "External slide links and uploaded decks"),
+        ].join("");
+    }
+
+    function buildFilterStatus() {
+        const courseLabel = filterCourse.value
+            ? lookups.courses.find((course) => String(course.id) === String(filterCourse.value))?.title || "Selected course"
+            : "All courses";
+        const lectureLabel = filterLecture.value
+            ? filterLectures(filterCourse.value).find((lecture) => String(lecture.id) === String(filterLecture.value))?.label || "Selected lecture"
+            : "All lectures";
+        filterStatus.textContent = `${courseLabel} / ${lectureLabel}`;
+    }
+
+    function groupMaterials(materials) {
+        const groups = new Map();
+        materials.forEach((item) => {
+            const key = `${item.course_id}:${item.lesson_id}`;
+            if (!groups.has(key)) {
+                groups.set(key, {
+                    course_title: item.course_title,
+                    lesson_title: item.lesson_title,
+                    lesson_order: item.lesson_order,
+                    items: [],
+                });
+            }
+            groups.get(key).items.push(item);
+        });
+        return Array.from(groups.values());
+    }
+
+    function renderMaterialList(materials) {
+        if (!materials.length) {
+            renderEmpty(listEl, "No lecture attachments match the current course and lecture filters.");
             return;
         }
-        listEl.innerHTML = data.items
+
+        listEl.innerHTML = groupMaterials(materials)
             .map(
-                (item) => `
-                    <button type="button" class="admin-list__item" data-material-item="${item.id}">
-                        <span class="admin-list__title">${escapeHtml(item.title)}</span>
-                        <span class="admin-list__meta">${escapeHtml(item.course_title)} / ${escapeHtml(item.lesson_title)}</span>
-                        <span class="admin-list__submeta">
-                            <span>${escapeHtml(item.material_type_label)}</span>
-                            <span>${escapeHtml(item.file_name)}</span>
-                        </span>
-                    </button>
+                (group) => `
+                    <section class="admin-material-group">
+                        <header class="admin-material-group__header">
+                            <div>
+                                <span class="admin-material-group__course">${escapeHtml(group.course_title)}</span>
+                                <strong>Lecture ${escapeHtml(group.lesson_order)}: ${escapeHtml(group.lesson_title)}</strong>
+                            </div>
+                            <span class="admin-chip">${escapeHtml(group.items.length)} items</span>
+                        </header>
+                        <div class="admin-material-group__items">
+                            ${group.items
+                                .map(
+                                    (item) => `
+                                        <button
+                                            type="button"
+                                            class="admin-list__item admin-list__item--material ${currentId === String(item.id) ? "is-active" : ""}"
+                                            data-material-item="${item.id}"
+                                        >
+                                            <span class="admin-list__title">${escapeHtml(item.title)}</span>
+                                            <span class="admin-list__meta">${escapeHtml(item.description || item.viewer_note || item.file_name || item.source_url || "No description")}</span>
+                                            <span class="admin-list__submeta">
+                                                <span>#${escapeHtml(item.order)}</span>
+                                                <span>${escapeHtml(item.material_type_label)}</span>
+                                                <span>${escapeHtml(item.source_type_label)}</span>
+                                                ${
+                                                    item.is_presentation
+                                                        ? `<span>${escapeHtml(item.presentation_provider_label)}</span>`
+                                                        : item.file_extension
+                                                          ? `<span>${escapeHtml(item.file_extension.replace(".", "").toUpperCase())}</span>`
+                                                          : ""
+                                                }
+                                            </span>
+                                        </button>
+                                    `
+                                )
+                                .join("")}
+                        </div>
+                    </section>
                 `
             )
             .join("");
-        Array.from(listEl.querySelectorAll("[data-material-item]")).forEach((button) => {
-            button.classList.toggle("is-active", button.dataset.materialItem === String(currentId));
-        });
+    }
+
+    function setCurrentSource(item) {
+        const link = item.source_url || item.file_url || "";
+        if (!link) {
+            currentSource.hidden = true;
+            currentSourceLink.href = "#";
+            return;
+        }
+
+        currentSource.hidden = false;
+        currentSourceTitle.textContent = item.file_name || item.title || "Existing attachment";
+        currentSourceCopy.textContent =
+            item.viewer_note ||
+            (item.source_type === "url"
+                ? "This saved presentation link is what learners will open from the lecture viewer."
+                : "This uploaded file remains attached until you replace it.");
+        currentSourceLink.href = link;
+        currentSourceLink.textContent = item.source_type === "url" ? "Open saved link" : "Open current file";
+    }
+
+    function syncGlanceCard() {
+        const isPresentation = typeSelect.value === "presentation";
+        const usesUrl = isPresentation && sourceSelect.value === "url";
+        glance.hidden = false;
+
+        if (isPresentation) {
+            glanceType.textContent = providerSelect.options[providerSelect.selectedIndex]?.text || "Presentation";
+            glanceTitle.textContent = usesUrl ? "Embedded lecture viewer" : "Stored slide deck";
+            glanceCopy.textContent = usesUrl
+                ? "This lecture item will be prepared for the learner carousel using the saved presentation link."
+                : "Uploaded decks are stored with the lecture and prepared for the learner carousel with open-file fallback support.";
+            return;
+        }
+
+        glanceType.textContent = typeSelect.options[typeSelect.selectedIndex]?.text || "Attachment";
+        glanceTitle.textContent = "Downloadable lecture resource";
+        glanceCopy.textContent = "Learners will see this item in the lecture attachments library for quick access.";
+    }
+
+    function updateMaterialMode() {
+        const isPresentation = typeSelect.value === "presentation";
+        if (!isPresentation) {
+            sourceSelect.value = "file";
+            providerSelect.value = "none";
+        }
+
+        const usesUrl = isPresentation && sourceSelect.value === "url";
+        sourceRow.hidden = !isPresentation;
+        providerRow.hidden = !isPresentation;
+        urlRow.hidden = !usesUrl;
+        fileRow.hidden = usesUrl;
+
+        if (isPresentation && !usesUrl) {
+            providerSelect.value = "upload";
+        }
+        if (isPresentation && usesUrl && (!providerSelect.value || providerSelect.value === "none" || providerSelect.value === "upload")) {
+            providerSelect.value = "google_slides";
+        }
+
+        if (isPresentation) {
+            formMetaEl.textContent = usesUrl
+                ? "Save a Canva, Google Slides, or direct embed link to place this presentation in the learner carousel."
+                : "Upload a presentation deck file. PPT, PPTX, and PDF are supported for stored lecture presentations.";
+        } else {
+            formMetaEl.textContent = "Upload a lecture resource such as a document, image, archive, or other downloadable file.";
+        }
+
+        fileInput.required = !usesUrl;
+        urlInput.required = usesUrl;
+        syncGlanceCard();
+    }
+
+    async function loadMaterials() {
+        const params = new URLSearchParams();
+        if (filterCourse.value) {
+            params.set("course", filterCourse.value);
+        }
+        if (filterLecture.value) {
+            params.set("lecture", filterLecture.value);
+        }
+        const query = params.toString() ? `?${params.toString()}` : "";
+        const data = await request(`${API_BASE}/materials/${query}`);
+        items = data.items;
+        renderSummary(items);
+        buildFilterStatus();
+        renderMaterialList(items);
     }
 
     function resetForm() {
         currentId = "";
         form.reset();
         form.elements.material_id.value = "";
-        titleEl.textContent = "New material";
+        form.elements.order.value = 1;
+        form.elements.material_type.value = "document";
+        form.elements.source_type.value = "file";
+        form.elements.presentation_provider.value = "none";
+        formCourse.value = filterCourse.value || "";
+        fillLectureSelect(
+            formLecture,
+            formCourse.value,
+            filterLecture.value && filterLectures(formCourse.value).some((lecture) => String(lecture.id) === String(filterLecture.value))
+                ? filterLecture.value
+                : "",
+        );
+        titleEl.textContent = "New attachment";
         deleteButton.hidden = true;
-        fillLectureSelect(formLecture, formCourse.value);
+        currentSource.hidden = true;
         setFeedback(feedback, "");
         Array.from(listEl.querySelectorAll("[data-material-item]")).forEach((button) => button.classList.remove("is-active"));
+        updateMaterialMode();
     }
 
     function populateForm(item) {
-        currentId = item.id;
+        currentId = String(item.id);
         form.elements.material_id.value = item.id;
         form.elements.title.value = item.title || "";
+        form.elements.order.value = item.order || 1;
         form.elements.description.value = item.description || "";
         form.elements.material_type.value = item.material_type || "document";
+        form.elements.source_type.value = item.source_type || "file";
+        form.elements.presentation_provider.value = item.presentation_provider || "none";
+        form.elements.external_url.value = item.external_url || "";
         formCourse.value = item.course_id || "";
         fillLectureSelect(formLecture, item.course_id, item.lesson_id);
         titleEl.textContent = item.title;
         deleteButton.hidden = false;
+        setCurrentSource(item);
+        updateMaterialMode();
         Array.from(listEl.querySelectorAll("[data-material-item]")).forEach((button) => {
             button.classList.toggle("is-active", button.dataset.materialItem === String(item.id));
         });
     }
 
-    filterCourse.addEventListener("change", loadMaterials);
+    filterCourse.addEventListener("change", async () => {
+        fillLectureSelect(filterLecture, filterCourse.value, "", "All lectures");
+        await loadMaterials();
+    });
+    filterLecture.addEventListener("change", loadMaterials);
     formCourse.addEventListener("change", () => fillLectureSelect(formLecture, formCourse.value));
+    typeSelect.addEventListener("change", updateMaterialMode);
+    sourceSelect.addEventListener("change", updateMaterialMode);
+    providerSelect.addEventListener("change", syncGlanceCard);
 
     listEl.addEventListener("click", async (event) => {
         const button = event.target.closest("[data-material-item]");

@@ -1,6 +1,8 @@
 from django.core.exceptions import ObjectDoesNotExist
 from django.utils import timezone
 
+from courses.material_library import build_material_view_model
+
 
 def image_url(field):
     if not field:
@@ -16,6 +18,7 @@ def serialize_course_option(course):
         "id": course.id,
         "title": course.title,
         "category": course.category,
+        "category_label": course.get_category_display(),
     }
 
 
@@ -72,18 +75,33 @@ def serialize_lesson(lesson):
 
 
 def serialize_material(material):
+    material_view = build_material_view_model(material)
     return {
         "id": material.id,
         "lesson_id": material.lesson_id,
         "lesson_title": material.lesson.title,
+        "lesson_order": material.lesson.order,
         "course_id": material.lesson.course_id,
         "course_title": material.lesson.course.title,
         "title": material.title,
         "description": material.description,
-        "material_type": material.material_type,
-        "material_type_label": material.get_material_type_display(),
+        "order": material.order,
+        "material_type": material_view["material_type"],
+        "material_type_label": material_view["material_type_label"],
+        "source_type": material_view["source_type"],
+        "source_type_label": material_view["source_type_label"],
+        "presentation_provider": material_view["presentation_provider"],
+        "presentation_provider_label": material_view["presentation_provider_label"],
+        "external_url": material.external_url,
         "file_url": image_url(material.file),
-        "file_name": material.file.name.split("/")[-1] if material.file else "",
+        "source_url": material_view["source_url"],
+        "embed_url": material_view["embed_url"],
+        "file_name": material_view["file_name"],
+        "file_extension": material_view["file_extension"],
+        "is_presentation": material_view["is_presentation"],
+        "supports_embed": material_view["supports_embed"],
+        "viewer_kind": material_view["viewer_kind"],
+        "viewer_note": material_view["viewer_note"],
         "uploaded_at": material.uploaded_at.isoformat() if material.uploaded_at else "",
         "updated_at": material.updated_at.isoformat() if material.updated_at else "",
     }

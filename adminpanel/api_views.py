@@ -89,6 +89,10 @@ def safe_int(value, default=None):
         return default
 
 
+def serialize_category_options():
+    return [{"id": value, "title": label} for value, label in Course.CATEGORY_CHOICES]
+
+
 def user_accounts_queryset():
     return User.objects.annotate(
         enrollment_count=Count("enrollments", distinct=True),
@@ -486,16 +490,19 @@ def dashboard(request):
 @require_http_methods(["GET", "POST"])
 def courses_collection(request):
     if request.method == "GET":
+        category = (request.GET.get("category") or "").strip()
         courses = Course.objects.order_by("title")
+        if category:
+            courses = courses.filter(category=category)
         if request.GET.get("compact"):
-            return JsonResponse({"items": [serialize_course_option(course) for course in courses]})
+            return JsonResponse({"items": [serialize_course_option(course) for course in courses], "categories": serialize_category_options()})
 
         courses = courses.annotate(
             enrollment_count=Count("enrollments", filter=learner_account_q("enrollments__user__"), distinct=True),
             lesson_count=Count("lessons", distinct=True),
             badge_count=Count("badges", distinct=True),
         )
-        return JsonResponse({"items": [serialize_course(course) for course in courses]})
+        return JsonResponse({"items": [serialize_course(course) for course in courses], "categories": serialize_category_options()})
 
     form = CourseAdminForm(request.POST, request.FILES)
     if not form.is_valid():
@@ -567,7 +574,7 @@ def lecture_detail(request, lecture_id):
 
     if request.method == "GET":
         lesson.material_count = lesson.materials.count()
-        materials = lesson.materials.select_related("lesson__course").order_by("title")
+        materials = lesson.materials.select_related("lesson__course").order_by("order", "title")
         return JsonResponse(
             {
                 "item": serialize_lesson(lesson),
@@ -595,11 +602,12 @@ def materials_collection(request):
     materials = LearningMaterial.objects.select_related("lesson", "lesson__course").order_by(
         "lesson__course__title",
         "lesson__order",
+        "order",
         "title",
     )
     if lesson_id:
         materials = materials.filter(lesson_id=lesson_id)
-    elif course_id:
+    if course_id:
         materials = materials.filter(lesson__course_id=course_id)
 
     if request.method == "GET":

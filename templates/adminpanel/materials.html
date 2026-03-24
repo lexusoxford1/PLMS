@@ -1,34 +1,53 @@
 {% extends "adminpanel/base.html" %}
 
 {% block admin_content %}
-    <section class="admin-page" data-admin-screen="materials">
-        <div class="admin-workspace">
+    <section class="admin-page admin-page--materials" data-admin-screen="materials">
+        <div class="admin-grid admin-grid--metrics" data-material-summary></div>
+
+        <div class="admin-workspace admin-workspace--materials">
             <section class="admin-card admin-card--list">
                 <div class="admin-card__header">
                     <div>
-                        <p class="admin-card__eyebrow">Learning resources</p>
-                        <h2>Lecture attachments</h2>
+                        <p class="admin-card__eyebrow">Lecture library</p>
+                        <h2>Attachments and presentations</h2>
+                        <p class="admin-inline-note">Browse every lecture resource grouped by course and lecture order.</p>
                     </div>
-                    <div class="admin-card__actions">
+                    <div class="admin-card__actions admin-card__actions--stack">
                         <select data-material-filter-course>
                             <option value="">All courses</option>
                         </select>
-                        <button type="button" class="admin-button" data-action="new-material">New material</button>
+                        <select data-material-filter-lecture>
+                            <option value="">All lectures</option>
+                        </select>
+                        <button type="button" class="admin-button" data-action="new-material">New attachment</button>
                     </div>
                 </div>
-                <div class="admin-list" data-material-list></div>
+                <div class="admin-card__toolbar">
+                    <span class="admin-chip" data-material-filter-status>All lecture materials</span>
+                    <span class="admin-inline-note">Use the lecture filter to manage one presentation set at a time.</span>
+                </div>
+                <div class="admin-list admin-material-list" data-material-list></div>
             </section>
 
             <section class="admin-card admin-card--form">
                 <div class="admin-card__header">
                     <div>
-                        <p class="admin-card__eyebrow">Uploader</p>
-                        <h2 data-material-form-title>New material</h2>
+                        <p class="admin-card__eyebrow">Material editor</p>
+                        <h2 data-material-form-title>New attachment</h2>
+                        <p class="admin-inline-note" data-material-form-meta>
+                            Upload files for standard resources and uploaded decks, or switch to link mode for Canva and Google Slides.
+                        </p>
+                    </div>
+                    <div class="admin-material-glance" data-material-glance hidden>
+                        <span class="admin-chip" data-material-glance-type>Attachment</span>
+                        <strong data-material-glance-title>Ready to publish</strong>
+                        <p data-material-glance-copy>Presentation links and uploaded decks will appear in the learner carousel.</p>
                     </div>
                 </div>
                 <div class="admin-feedback" data-material-feedback hidden></div>
                 <form data-material-form class="admin-form" enctype="multipart/form-data">
                     <input type="hidden" name="material_id">
+
                     <div class="admin-form-grid">
                         <label>
                             <span>Course</span>
@@ -38,30 +57,94 @@
                             <span>Lecture</span>
                             <select name="lesson" data-material-lecture-select required></select>
                         </label>
-                        <label class="admin-form-grid__full">
-                            <span>Title</span>
-                            <input type="text" name="title" required>
+                        <label>
+                            <span>Display order</span>
+                            <input type="number" name="order" min="1" value="1" required>
                         </label>
                         <label>
                             <span>Material type</span>
-                            <select name="material_type">
+                            <select name="material_type" data-material-type-select>
                                 <option value="document">Document</option>
                                 <option value="image">Image</option>
                                 <option value="archive">Archive</option>
+                                <option value="presentation">Presentation</option>
                                 <option value="other">Other</option>
                             </select>
                         </label>
                         <label class="admin-form-grid__full">
-                            <span>Description</span>
-                            <textarea name="description" rows="3"></textarea>
+                            <span>Title</span>
+                            <input type="text" name="title" required>
+                        </label>
+                        <label data-material-source-row>
+                            <span>Source</span>
+                            <select name="source_type" data-material-source-select>
+                                <option value="file">Uploaded file</option>
+                                <option value="url">External presentation link</option>
+                            </select>
+                        </label>
+                        <label data-material-provider-row hidden>
+                            <span>Presentation provider</span>
+                            <select name="presentation_provider" data-material-provider-select>
+                                <option value="none">Not a presentation</option>
+                                <option value="upload">Uploaded deck</option>
+                                <option value="google_slides">Google Slides</option>
+                                <option value="canva">Canva</option>
+                                <option value="embed">Direct embed link</option>
+                            </select>
+                        </label>
+                        <label class="admin-form-grid__full" data-material-url-row hidden>
+                            <span>Presentation link</span>
+                            <input
+                                type="url"
+                                name="external_url"
+                                placeholder="https://docs.google.com/presentation/... or https://www.canva.com/..."
+                            >
+                        </label>
+                        <label class="admin-form-grid__full" data-material-file-row>
+                            <span>Upload file</span>
+                            <input type="file" name="file" data-material-file-input>
                         </label>
                         <label class="admin-form-grid__full">
-                            <span>Upload file</span>
-                            <input type="file" name="file">
+                            <span>Description</span>
+                            <textarea name="description" rows="4"></textarea>
                         </label>
                     </div>
+
+                    <div class="admin-material-current" data-material-current hidden>
+                        <div>
+                            <span class="admin-card__eyebrow">Current source</span>
+                            <strong data-material-current-title>Existing attachment</strong>
+                            <p data-material-current-copy>Open the current file or link before replacing it.</p>
+                        </div>
+                        <a href="#" target="_blank" rel="noopener noreferrer" data-material-current-link>Open current source</a>
+                    </div>
+
+                    <section class="admin-form-section admin-form-section--guide">
+                        <div class="admin-form-section__header">
+                            <div>
+                                <h3>Presentation readiness</h3>
+                                <p class="admin-inline-note">Each lecture can mix downloads with presentation items that feed the learner carousel.</p>
+                            </div>
+                            <span class="admin-chip">Learner viewer</span>
+                        </div>
+                        <div class="admin-material-guidance">
+                            <article class="admin-material-guidance__item">
+                                <strong>Uploaded deck</strong>
+                                <p>Use `PPT`, `PPTX`, or `PDF` when you want a stored presentation file tied to a lecture.</p>
+                            </article>
+                            <article class="admin-material-guidance__item">
+                                <strong>Google Slides</strong>
+                                <p>Paste the published or share link. The learner panel will prepare an embeddable lecture slide.</p>
+                            </article>
+                            <article class="admin-material-guidance__item">
+                                <strong>Canva</strong>
+                                <p>Use the shared design link for slide-based lectures and open-in-new-tab fallback support.</p>
+                            </article>
+                        </div>
+                    </section>
+
                     <div class="admin-form__footer">
-                        <button type="submit" class="admin-button">Save material</button>
+                        <button type="submit" class="admin-button">Save attachment</button>
                         <button type="button" class="admin-button admin-button--ghost" data-action="reset-material">Clear</button>
                         <button type="button" class="admin-button admin-button--danger" data-action="delete-material" hidden>Delete</button>
                     </div>

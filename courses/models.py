@@ -1,5 +1,7 @@
+from pathlib import Path
+
 from django.conf import settings
-from django.core.exceptions import ObjectDoesNotExist
+from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.db import models
 from django.template.defaultfilters import slugify
 
@@ -23,10 +25,10 @@ class Course(models.Model):
     CATEGORY_GENERAL = "general"
 
     CATEGORY_CHOICES = (
-        (CATEGORY_CSHARP, "C#"),
-        (CATEGORY_PYTHON, "Python"),
-        (CATEGORY_PHP, "PHP"),
-        (CATEGORY_GENERAL, "General Programming"),
+        (CATEGORY_CSHARP, "C# and .NET Development"),
+        (CATEGORY_PYTHON, "Python Programming and Automation"),
+        (CATEGORY_PHP, "PHP Web Development"),
+        (CATEGORY_GENERAL, "General Programming Foundations"),
     )
 
     BEGINNER = "beginner"
@@ -144,28 +146,163 @@ class LearningMaterial(models.Model):
     MATERIAL_DOCUMENT = "document"
     MATERIAL_IMAGE = "image"
     MATERIAL_ARCHIVE = "archive"
+    MATERIAL_PRESENTATION = "presentation"
     MATERIAL_OTHER = "other"
 
     MATERIAL_TYPE_CHOICES = (
         (MATERIAL_DOCUMENT, "Document"),
         (MATERIAL_IMAGE, "Image"),
         (MATERIAL_ARCHIVE, "Archive"),
+        (MATERIAL_PRESENTATION, "Presentation"),
         (MATERIAL_OTHER, "Other"),
     )
 
+    SOURCE_FILE = "file"
+    SOURCE_URL = "url"
+
+    SOURCE_TYPE_CHOICES = (
+        (SOURCE_FILE, "Uploaded file"),
+        (SOURCE_URL, "External link"),
+    )
+
+    PRESENTATION_PROVIDER_NONE = "none"
+    PRESENTATION_PROVIDER_UPLOAD = "upload"
+    PRESENTATION_PROVIDER_GOOGLE_SLIDES = "google_slides"
+    PRESENTATION_PROVIDER_CANVA = "canva"
+    PRESENTATION_PROVIDER_EMBED = "embed"
+
+    PRESENTATION_PROVIDER_CHOICES = (
+        (PRESENTATION_PROVIDER_NONE, "Not a presentation"),
+        (PRESENTATION_PROVIDER_UPLOAD, "Uploaded deck"),
+        (PRESENTATION_PROVIDER_GOOGLE_SLIDES, "Google Slides"),
+        (PRESENTATION_PROVIDER_CANVA, "Canva"),
+        (PRESENTATION_PROVIDER_EMBED, "Direct embed link"),
+    )
+
+    PRESENTATION_UPLOAD_EXTENSIONS = {".ppt", ".pptx", ".pdf"}
+
     lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE, related_name="materials")
     title = models.CharField(max_length=200)
+    order = models.PositiveIntegerField(default=1)
     description = models.TextField(blank=True)
-    file = models.FileField(upload_to="lesson_materials/")
+    file = models.FileField(upload_to="lesson_materials/", blank=True, null=True)
     material_type = models.CharField(max_length=20, choices=MATERIAL_TYPE_CHOICES, default=MATERIAL_DOCUMENT)
+    source_type = models.CharField(max_length=12, choices=SOURCE_TYPE_CHOICES, default=SOURCE_FILE)
+    external_url = models.URLField(blank=True)
+    presentation_provider = models.CharField(
+        max_length=20,
+        choices=PRESENTATION_PROVIDER_CHOICES,
+        default=PRESENTATION_PROVIDER_NONE,
+    )
     uploaded_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        ordering = ["lesson__course", "lesson__order", "title"]
+        ordering = ["lesson__course", "lesson__order", "order", "title"]
+
+    def clean(self):
+        errors = {}
+        is_presentation = self.material_type == self.MATERIAL_PRESENTATION
+        has_file = bool(self.file)
+        has_external_url = bool((self.external_url or "").strip())
+        file_extension = self.file_extension
+
+        if self.source_type == self.SOURCE_FILE and not has_file:
+            errors.setdefault("file", []).append("Upload a file for this attachment.")
+
+        if self.source_type == self.SOURCE_URL:
+            if not is_presentation:
+                errors.setdefault("source_type", []).append(
+                    "External links are only supported for presentation materials."
+                )
+            if not has_external_url:
+                errors.setdefault("external_url", []).append("Paste a presentation link.")
+
+        if self.source_type == self.SOURCE_FILE and has_external_url:
+            self.external_url = ""
+
+        if is_presentation:
+            if self.source_type == self.SOURCE_FILE:
+                if self.presentation_provider not in {
+                    self.PRESENTATION_PROVIDER_NONE,
+                    self.PRESENTATION_PROVIDER_UPLOAD,
+                }:
+                    errors.setdefault("presentation_provider", []).append(
+                        "Uploaded presentation files must use the uploaded deck provider."
+                    )
+                if has_file and file_extension not in self.PRESENTATION_UPLOAD_EXTENSIONS:
+                    allowed = ", ".join(sorted(self.PRESENTATION_UPLOAD_EXTENSIONS))
+                    errors.setdefault("file", []).append(
+                        f"Upload a supported presentation deck ({allowed})."
+                    )
+            elif self.presentation_provider not in {
+                self.PRESENTATION_PROVIDER_GOOGLE_SLIDES,
+                self.PRESENTATION_PROVIDER_CANVA,
+                self.PRESENTATION_PROVIDER_EMBED,
+            }:
+                errors.setdefault("presentation_provider", []).append(
+                    "Choose how this presentation link should be embedded."
+                )
+        else:
+            if self.source_type != self.SOURCE_FILE:
+                errors.setdefault("source_type", []).append(
+                    "Documents, images, archives, and other files must be uploaded."
+                )
+            if self.presentation_provider not in {
+                self.PRESENTATION_PROVIDER_NONE,
+                self.PRESENTATION_PROVIDER_UPLOAD,
+            }:
+                errors.setdefault("presentation_provider", []).append(
+                    "Only presentation materials can use Canva, Google Slides, or embed providers."
+                )
+
+        if errors:
+            raise ValidationError(errors)
 
     def __str__(self):
         return f"{self.lesson} - {self.title}"
+
+    def save(self, *args, **kwargs):
+        if self.material_type == self.MATERIAL_PRESENTATION:
+            if self.source_type == self.SOURCE_FILE:
+                self.presentation_provider = self.PRESENTATION_PROVIDER_UPLOAD
+                self.external_url = ""
+            else:
+                self.file = None
+                if self.presentation_provider == self.PRESENTATION_PROVIDER_NONE:
+                    self.presentation_provider = self.PRESENTATION_PROVIDER_EMBED
+        else:
+            self.source_type = self.SOURCE_FILE
+            self.presentation_provider = self.PRESENTATION_PROVIDER_NONE
+            self.external_url = ""
+        super().save(*args, **kwargs)
+
+    @property
+    def file_extension(self):
+        if not self.file:
+            return ""
+        return Path(self.file.name).suffix.lower()
+
+    @property
+    def file_name(self):
+        if not self.file:
+            return ""
+        return Path(self.file.name).name
+
+    @property
+    def is_presentation(self):
+        return self.material_type == self.MATERIAL_PRESENTATION
+
+    @property
+    def source_url(self):
+        if self.source_type == self.SOURCE_URL:
+            return (self.external_url or "").strip()
+        if not self.file:
+            return ""
+        try:
+            return self.file.url
+        except ValueError:
+            return ""
 
 
 class Enrollment(models.Model):

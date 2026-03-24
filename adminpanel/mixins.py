@@ -13,7 +13,7 @@ def can_access_admin_panel(user):
 
 
 class AdminPanelAccessMixin(LoginRequiredMixin, UserPassesTestMixin):
-    raise_exception = True
+    raise_exception = False
     login_url = ADMIN_PANEL_LOGIN_URL
     redirect_field_name = "next"
 

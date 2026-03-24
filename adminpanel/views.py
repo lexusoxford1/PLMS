@@ -88,7 +88,7 @@ class DashboardView(AdminPanelPageView):
 class CoursesView(AdminPanelPageView):
     section_key = "courses"
     page_title = "Course Management"
-    page_description = "Create, organize, and publish programming tracks with clean metadata and thumbnails."
+    page_description = "Create, organize, filter, and publish programming tracks with clear category-based classification and thumbnails."
     template_name = "adminpanel/courses.html"
 
 
@@ -102,7 +102,7 @@ class LecturesView(AdminPanelPageView):
 class MaterialsView(AdminPanelPageView):
     section_key = "materials"
     page_title = "Learning Materials"
-    page_description = "Attach PDFs, images, and downloadable resources directly to the right lecture."
+    page_description = "Manage lecture attachments, uploaded decks, Canva links, Google Slides, and learner-facing presentation viewers."
     template_name = "adminpanel/materials.html"
 
 

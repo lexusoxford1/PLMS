@@ -10,6 +10,9 @@
                         <h2>Programming courses</h2>
                     </div>
                     <div class="admin-card__actions">
+                        <select data-course-filter-category>
+                            <option value="">All categories</option>
+                        </select>
                         <button type="button" class="admin-button admin-button--ghost" data-action="refresh-courses">Refresh</button>
                         <button type="button" class="admin-button" data-action="new-course">New course</button>
                     </div>
@@ -36,11 +39,14 @@
                         <label>
                             <span>Category</span>
                             <select name="category" required>
-                                <option value="python">Python</option>
-                                <option value="php">PHP</option>
-                                <option value="csharp">C#</option>
-                                <option value="general">General Programming</option>
+                                <option value="python">Python Programming and Automation</option>
+                                <option value="php">PHP Web Development</option>
+                                <option value="csharp">C# and .NET Development</option>
+                                <option value="general">General Topic Foundations</option>
                             </select>
+                            <small class="admin-inline-note">
+                                Use category as the primary classification for filtering, organization, and reporting.
+                            </small>
                         </label>
                         <label class="admin-form-grid__full">
                             <span>Description</span>

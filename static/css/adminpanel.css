@@ -402,6 +402,19 @@ svg {
     flex-wrap: wrap;
 }
 
+.admin-card__actions--stack {
+    align-items: stretch;
+}
+
+.admin-card__toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+    padding: 0 1.2rem 1.1rem;
+}
+
 .admin-card-grid,
 .admin-activity-feed,
 .admin-list,
@@ -533,6 +546,10 @@ svg {
     box-shadow: 0 16px 28px rgba(15, 118, 110, 0.12);
 }
 
+.admin-list__item--material {
+    background: rgba(255, 255, 255, 0.82);
+}
+
 .admin-list__title {
     font-weight: 700;
     letter-spacing: -0.02em;
@@ -550,6 +567,50 @@ svg {
     display: flex;
     flex-wrap: wrap;
     gap: 0.45rem;
+}
+
+.admin-workspace--materials {
+    grid-template-columns: minmax(320px, 460px) minmax(0, 1fr);
+}
+
+.admin-material-list {
+    gap: 1rem;
+}
+
+.admin-material-group {
+    display: grid;
+    gap: 0.85rem;
+    padding: 1rem;
+    border: 1px solid var(--admin-line);
+    border-radius: 1.2rem;
+    background: rgba(255, 255, 255, 0.64);
+}
+
+.admin-material-group__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+}
+
+.admin-material-group__header strong {
+    display: block;
+    letter-spacing: -0.02em;
+}
+
+.admin-material-group__course {
+    display: block;
+    margin-bottom: 0.2rem;
+    color: var(--admin-accent);
+    font-size: 0.74rem;
+    font-weight: 800;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+}
+
+.admin-material-group__items {
+    display: grid;
+    gap: 0.75rem;
 }
 
 .admin-chip,
@@ -670,6 +731,62 @@ svg {
 .admin-builder {
     display: grid;
     gap: 1rem;
+}
+
+.admin-material-glance,
+.admin-material-current,
+.admin-material-guidance__item {
+    border: 1px solid var(--admin-line);
+    border-radius: 1.2rem;
+    background: rgba(255, 255, 255, 0.78);
+}
+
+.admin-material-glance {
+    display: grid;
+    gap: 0.4rem;
+    width: min(100%, 280px);
+    padding: 1rem;
+    background:
+        radial-gradient(circle at top right, rgba(245, 158, 11, 0.14), transparent 34%),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(240, 253, 250, 0.88));
+}
+
+.admin-material-glance p,
+.admin-material-current p,
+.admin-material-guidance__item p {
+    margin: 0;
+    color: var(--admin-muted);
+    line-height: 1.6;
+}
+
+.admin-material-current {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem 1.05rem;
+}
+
+.admin-material-current strong,
+.admin-material-guidance__item strong {
+    letter-spacing: -0.02em;
+}
+
+.admin-material-current a {
+    color: var(--admin-accent-strong);
+    font-weight: 700;
+}
+
+.admin-material-guidance {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.85rem;
+}
+
+.admin-material-guidance__item {
+    display: grid;
+    gap: 0.45rem;
+    padding: 1rem;
 }
 
 .admin-builder__section {
@@ -853,9 +970,12 @@ svg {
     }
 
     .admin-card__header,
+    .admin-card__toolbar,
     .admin-builder__header,
     .admin-form__footer,
-    .admin-card__actions {
+    .admin-card__actions,
+    .admin-material-group__header,
+    .admin-material-current {
         flex-direction: column;
         align-items: stretch;
     }
@@ -868,7 +988,8 @@ svg {
     }
 
     .admin-grid--metrics,
-    .admin-card-grid {
+    .admin-card-grid,
+    .admin-material-guidance {
         grid-template-columns: 1fr;
     }
 }

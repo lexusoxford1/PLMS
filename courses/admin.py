@@ -35,6 +35,6 @@ class EnrollmentAdmin(admin.ModelAdmin):
 
 @admin.register(LearningMaterial)
 class LearningMaterialAdmin(admin.ModelAdmin):
-    list_display = ("title", "lesson", "material_type", "uploaded_at")
-    list_filter = ("material_type", "lesson__course")
-    search_fields = ("title", "description", "lesson__title", "lesson__course__title")
+    list_display = ("title", "lesson", "order", "material_type", "source_type", "presentation_provider", "uploaded_at")
+    list_filter = ("material_type", "source_type", "presentation_provider", "lesson__course")
+    search_fields = ("title", "description", "lesson__title", "lesson__course__title", "external_url")

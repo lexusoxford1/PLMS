@@ -18,12 +18,14 @@
     <article class="card">
         <h2>Lecture</h2>
         <div class="content-block rich-content">{{ lesson.lecture_content|safe }}</div>
-        <form method="post" action="{% url 'mark_lecture_complete' course.slug lesson.slug %}">
-            {% csrf_token %}
-            <button type="submit" class="button" {% if progress.lecture_completed %}disabled{% endif %}>
-                {% if progress.lecture_completed %}Lecture Completed{% else %}Mark Lecture Complete{% endif %}
-            </button>
-        </form>
+        {% if not material_library.presentation_viewer.enabled %}
+            <form method="post" action="{% url 'mark_lecture_complete' course.slug lesson.slug %}">
+                {% csrf_token %}
+                <button type="submit" class="button" {% if progress.lecture_completed %}disabled{% endif %}>
+                    {% if progress.lecture_completed %}Lecture Completed{% else %}Mark Lecture Complete{% endif %}
+                </button>
+            </form>
+        {% endif %}
     </article>
 
     <article class="card">
@@ -52,6 +54,128 @@
         </div>
     </article>
 </section>
+
+{% if material_library.presentation_viewer.enabled %}
+    {% with viewer=material_library.presentation_viewer initial_slide=material_library.presentation_viewer.initial_slide %}
+        {{ viewer.slides|json_script:"lesson-slide-viewer-data" }}
+        <section
+            class="lesson-slide-viewer"
+            data-lesson-slide-viewer
+            data-slide-data-id="lesson-slide-viewer-data"
+            data-completion-unlocked="{% if progress.lecture_completed or viewer.total_slides == 1 %}true{% else %}false{% endif %}"
+            tabindex="0"
+            aria-label="{{ lesson.title }} presentation viewer"
+        >
+            <div class="lesson-slide-viewer__header">
+                <p class="eyebrow">Presentation viewer</p>
+                <h2 data-lesson-slide-title>{{ initial_slide.deck_title }}</h2>
+            </div>
+            <p class="lesson-slide-viewer__file" data-lesson-slide-file>{{ initial_slide.file_name }}</p>
+            <p class="lesson-slide-viewer__counter" aria-live="polite">
+                Slide <strong data-lesson-slide-current>1</strong> of <span data-lesson-slide-total>{{ viewer.total_slides }}</span>
+            </p>
+            <div class="lesson-slide-viewer__frame">
+                <img
+                    data-lesson-slide-image
+                    src="{{ initial_slide.image_url }}"
+                    alt="{{ initial_slide.alt }}"
+                    loading="eager"
+                >
+            </div>
+            <div class="lesson-slide-viewer__nav" role="group" aria-label="Slide navigation">
+                <button
+                    type="button"
+                    class="lesson-slide-viewer__nav-button"
+                    data-lesson-slide-prev
+                    disabled
+                    aria-disabled="true"
+                >
+                    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                        <path d="m14.5 6.5-5 5.5 5 5.5" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    <span>Previous</span>
+                </button>
+                <button
+                    type="button"
+                    class="lesson-slide-viewer__nav-button"
+                    data-lesson-slide-next
+                    {% if viewer.total_slides == 1 %}disabled{% endif %}
+                    aria-disabled="{% if viewer.total_slides == 1 %}true{% else %}false{% endif %}"
+                >
+                    <span>Next</span>
+                    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                        <path d="m9.5 6.5 5 5.5-5 5.5" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="lesson-slide-viewer__actions" data-lesson-slide-actions>
+                <a
+                    class="lesson-slide-viewer__action lesson-slide-viewer__action--secondary"
+                    data-lesson-slide-pdf
+                    href="{{ initial_slide.pdf_url }}"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    {% if not initial_slide.pdf_url %}hidden{% endif %}
+                >
+                    {{ initial_slide.pdf_label|default:"Open PDF Preview" }}
+                </a>
+                <a
+                    class="lesson-slide-viewer__action lesson-slide-viewer__action--primary"
+                    data-lesson-slide-download
+                    href="{{ initial_slide.download_url }}"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    {% if not initial_slide.download_url %}hidden{% endif %}
+                >
+                    {{ initial_slide.download_label|default:"Download Deck" }}
+                </a>
+            </div>
+            <div
+                class="lesson-slide-viewer__completion{% if progress.lecture_completed or viewer.total_slides == 1 %} is-visible{% endif %}"
+                data-lesson-slide-completion
+                {% if not progress.lecture_completed and viewer.total_slides != 1 %}hidden{% endif %}
+            >
+                <form method="post" action="{% url 'mark_lecture_complete' course.slug lesson.slug %}">
+                    {% csrf_token %}
+                    <button type="submit" class="button" {% if progress.lecture_completed %}disabled{% endif %}>
+                        {% if progress.lecture_completed %}Lecture Completed{% else %}Mark Lecture Complete{% endif %}
+                    </button>
+                </form>
+            </div>
+        </section>
+    {% endwith %}
+{% endif %}
+
+{% if material_library.supplemental_resources %}
+    <section class="card lesson-resource-library">
+        <div class="row-between lesson-resource-library__header">
+            <div>
+                <p class="eyebrow">Supplemental resources</p>
+                <h2>Files and supporting resources</h2>
+                <p class="muted">Open the supporting documents, downloads, and presentation source links connected to this lecture.</p>
+            </div>
+            <span class="badge-tag">{{ material_library.supplemental_resources|length }} item{{ material_library.supplemental_resources|length|pluralize }}</span>
+        </div>
+
+        <div class="lesson-resource-grid">
+            {% for item in material_library.supplemental_resources %}
+                <a class="lesson-resource-card" href="{{ item.source_url }}" target="_blank" rel="noopener noreferrer">
+                    <div class="lesson-resource-card__body">
+                        <span class="lesson-resource-card__type">{{ item.material_type_label }}</span>
+                        <h3>{{ item.title }}</h3>
+                        <p>{{ item.description|default:item.file_name|default:"Open this lecture resource." }}</p>
+                    </div>
+                    <div class="lesson-resource-card__meta">
+                        <span>Item {{ item.order }}</span>
+                        {% if item.file_extension %}
+                            <span>{{ item.file_extension|slice:"1:"|upper }}</span>
+                        {% endif %}
+                    </div>
+                </a>
+            {% endfor %}
+        </div>
+    </section>
+{% endif %}
 
 {% if lesson.has_activity %}
     {% if runner_ui.uses_code_runner %}
@@ -613,3 +737,4 @@
     </section>
 {% endif %}
 {% endblock %}
+
